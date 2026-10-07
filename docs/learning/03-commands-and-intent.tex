@@ -349,6 +349,8 @@ query can never break the URL or sneak in extra parameters.
 \texttt{set\_volume}    & Sets master volume to 0--100 \\
 \texttt{change\_volume} & Raises or lowers volume by a step \\
 \texttt{toggle\_mute}   & Mutes or unmutes \\
+\texttt{press\_keys}    & Presses a keyboard shortcut (e.g.\ \texttt{ctrl+shift+t}) in a named app (Section~\ref{sec:extend}) \\
+\texttt{focus\_app}     & Brings an already-open app to the front \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -377,7 +379,7 @@ of v1.
 \begin{concept}{Schema validation}
 A \textbf{schema} is a machine-checkable description of what valid data looks like:
 ``every command must have an \texttt{id}, at least one pattern, and an \texttt{action} that is
-one of the six primitives''. Before using the file, the agent checks it against
+one of the registered primitives''. Before using the file, the agent checks it against
 \texttt{shared/recipe.schema.json} (the contract from Doc~02).
 \end{concept}
 
@@ -413,7 +415,7 @@ loads. One typo never takes down the whole assistant.
 \subsection{Why this is safe}
 \begin{concept}{Allowlist}
 An \textbf{allowlist} is a fixed list of things that are permitted; everything else is
-refused. Listen's six primitives are an allowlist. A command can only ever \emph{combine}
+refused. Listen's registered primitives are an allowlist. A command can only ever \emph{combine}
 them; there is deliberately \textbf{no} ``run any program with any arguments'' primitive.
 \end{concept}
 
@@ -424,6 +426,114 @@ website'' or ``closes an app politely''. Without it, the worst case is ``runs an
 your PC''. Combined with your approval step and URL encoding, this keeps the AI helpful but
 harmless. Good design limits damage \emph{structurally}, rather than hoping nothing goes wrong.
 \end{why}
+
+% =====================================================================
+\section{Growing the command list from the code side}\label{sec:extend}
+
+You will keep thinking of commands for months: ``new tab'', ``close tab'', ``next song'',
+``scroll down''. Adding them must be quick \emph{in your editor}, not only through the web app.
+The design gives you two levels.
+
+\subsection{Level 1: a new command (data only, the common case)}
+
+Most new commands are a keyboard shortcut or a URL in a specific app. The
+\texttt{press\_keys} primitive covers almost all of them.
+
+\paragraph{One file per area.} Instead of one ever-growing file, commands live in a
+\emph{folder}, one YAML file per area, and the agent loads all of them:
+\begin{lstlisting}
+commands/
+  core.yaml        # open, close, search, play, volume
+  terminal.yaml    # new tab, close tab, split pane ...
+  browser.yaml     # new tab, close tab, reopen tab, refresh ...
+  media.yaml       # pause, next song ...
+\end{lstlisting}
+
+\paragraph{Context-aware commands.} ``New tab'' means \texttt{ctrl+shift+t} in Windows Terminal
+but \texttt{ctrl+t} in Chrome. A command can say which app it belongs to with
+\texttt{when\_app}:
+\begin{lstlisting}
+# commands/terminal.yaml
+- id: terminal_new_tab
+  patterns: ["new tab", "open a new tab"]
+  when_app: "Windows Terminal"
+  action: press_keys
+  params: { keys: "ctrl+shift+t" }
+
+- id: terminal_close_tab
+  patterns: ["close tab", "close this tab"]
+  when_app: "Windows Terminal"
+  action: press_keys
+  params: { keys: "ctrl+shift+w" }
+
+# commands/browser.yaml
+- id: browser_new_tab
+  patterns: ["new tab", "open a new tab"]
+  when_app: ["Google Chrome", "Microsoft Edge"]
+  action: press_keys
+  params: { keys: "ctrl+t" }
+\end{lstlisting}
+
+\begin{concept}{Context}
+\textbf{Context} is information about the situation that changes what a sentence means. Here
+the context is \emph{which app is in front} (the usage module already tracks it). A command with
+\texttt{when\_app} is only a candidate when that app is in front, and it counts as \emph{more
+specific} than a command without one, so ``close tab'' in Chrome closes a tab, not Chrome.
+\end{concept}
+
+\paragraph{From another app.} Add \texttt{focus\_first: true} and a pattern like
+``new terminal tab'': the agent brings Windows Terminal to the front, then presses the keys.
+
+\paragraph{Instant reload.} The agent checks the command folder's modification times every
+two seconds (one cheap file-system call, no extra library). Save a YAML file in PyCharm and
+the new command works on your next sentence, with no restart.
+
+\paragraph{Two developer commands.} So you never have to say a sentence out loud to test it:
+\begin{lstlisting}
+python -m listen_agent commands check
+    -> validates every file; errors point to file and line:
+       terminal.yaml:14  action "press_key" is not a known primitive
+                         (did you mean "press_keys"?)
+
+python -m listen_agent commands try "close tab" --app "Google Chrome"
+    -> dry run: shows the winning command, its slots and what WOULD happen,
+       without doing it
+\end{lstlisting}
+
+\subsection{Level 2: a new primitive (code, the rare case)}
+
+When no primitive can do the job (say, ``dim the screen''), you write a new one. Adding it must
+not mean editing five places, so primitives use a \textbf{registry}.
+
+\begin{concept}{Registry / plugin pattern}
+A \textbf{registry} is a central list that pieces of code \emph{add themselves to}. Each
+primitive is one file in \texttt{actions/primitives/}, marked with a \textbf{decorator}
+(the \texttt{@} line, which runs when the file is imported and registers the function). At
+startup the agent imports every file in that folder automatically. Adding a primitive therefore
+means \emph{adding one file}; no other file changes.
+\end{concept}
+
+\begin{lstlisting}[language=Python]
+# listen_agent/actions/primitives/set_brightness.py
+from listen_agent.actions.registry import primitive
+
+@primitive('set_brightness', params={'level': int})
+def set_brightness(level):
+    ...  # the Windows call that sets screen brightness
+\end{lstlisting}
+
+\noindent After that, any YAML command can use \texttt{action: set\_brightness}. The registry
+is also what \texttt{commands check} compares action names against, and the agent reports its
+list of primitives to the server during sync, so the AI command builder only ever proposes
+actions your agent actually has.
+
+\begin{caution}
+\texttt{press\_keys} makes the action allowlist weaker: some shortcuts are powerful
+(\texttt{win+r} opens the Run box). So \texttt{press\_keys} \emph{requires} a
+\texttt{when\_app}, refuses a short list of system-level combinations (\texttt{win+r},
+\texttt{win+x}, \texttt{ctrl+alt+del}), and has no ``type arbitrary text'' option. Commands the
+AI proposes that use \texttt{press\_keys} are highlighted in the approval step.
+\end{caution}
 
 % =====================================================================
 \section{Testing this design}
