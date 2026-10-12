@@ -536,6 +536,134 @@ AI proposes that use \texttt{press\_keys} are highlighted in the approval step.
 \end{caution}
 
 % =====================================================================
+\section{Routines: one phrase, many steps}\label{sec:routines}
+
+You say ``DSA'' and Listen opens CLion, Striver's sheet and LeetCode. That is a
+\textbf{routine}: a command whose action is a \emph{list} of steps instead of a single action.
+
+\begin{lstlisting}
+# commands/routines.yaml
+- id: dsa
+  patterns: ["dsa", "start dsa", "dsa mode"]
+  steps:
+    - { action: launch_app, app: "CLion" }
+    - { action: open_url,   url: "https://takeuforward.org/" }
+    - { action: open_url,   url: "https://leetcode.com/" }
+\end{lstlisting}
+
+\begin{concept}{Composition}
+Building something big out of small pieces that already work. A routine adds \emph{no new
+ability}: every step is an existing primitive. That is why routines are cheap to build and
+safe: they inherit the allowlist automatically.
+\end{concept}
+
+\paragraph{How steps run.} In order, with a short pause between them so apps have time to
+open. If one step fails (CLion not installed), the others still run, and Listen reports
+``Routine DSA: 2 of 3 steps done; CLion not found''. One broken step should not cost you the
+whole routine.
+
+\paragraph{Adding a routine.} Exactly like any command: add a block to
+\texttt{routines.yaml} in PyCharm (hot-reloaded), or describe it to the command builder (``add
+a routine called gym: open Spotify and play workout''), approve, done.
+
+\paragraph{Later: browser profiles.} Chrome can open a specific Google account's profile
+(\texttt{chrome.exe -{}-profile-directory="Profile 2" <url>}). Planned for the end of the
+project, the design leaves room for it now: an \texttt{open\_url} step will accept an optional
+\texttt{browser} and \texttt{profile}, mapped to a fixed list of profiles you define. Only that
+one flag is allowed, never arbitrary program arguments, so the allowlist stays intact.
+
+% =====================================================================
+\section{Undo}\label{sec:undo}
+
+\subsection{The rules (as decided)}
+\begin{enumerate}[nosep]
+  \item After an action \emph{succeeds}, Listen remembers how to reverse it, in one
+        \textbf{undo slot}.
+  \item If you say ``undo'' within \textbf{60 seconds}, Listen reverses it and empties the slot.
+  \item The slot is replaced only by the next \emph{successfully executed} command. A misheard
+        or unmatched sentence leaves it alone, so the undo is still there when you need it.
+  \item If the action has no reliable reverse, Listen says ``I can't undo that'' and does
+        nothing. It never guesses.
+\end{enumerate}
+\noindent The undo slot is separate from the history log: every action is still recorded for
+your analytics, whether or not it is undone.
+
+\begin{concept}{Command pattern (undo)}
+Undo works by storing each action \emph{together with its inverse}: ``set volume to 80, was
+40'' carries the knowledge needed to restore 40. Text editors, Photoshop and games all
+implement undo this way. Ours holds just one entry (\textbf{single-level undo}); a list of
+entries would give multi-level undo.
+\end{concept}
+
+\subsection{What can be reversed}
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{Action} & \textbf{Undo} \\
+\midrule
+\texttt{set\_volume}, \texttt{change\_volume}, \texttt{toggle\_mute} & Restore the previous volume / mute state. Exact. \\
+\texttt{launch\_app} & Close the app instance Listen started (by its process ID, not by name). \\
+\texttt{press\_keys} & Only if the command declares one, e.g.\ \texttt{undo: \{ keys: "ctrl+w" \}} for ``new tab''. \\
+\texttt{close\_app} & ``I can't undo that'': reopening loses unsaved work, so it is not a true undo. \\
+\texttt{open\_url} & ``I can't undo that'': the browser owns the tab, so closing it reliably is not possible. \\
+Routines & Reverse each undoable step, newest first; report the steps that could not be undone. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =====================================================================
+\section{Confidence thresholds}\label{sec:thresholds}
+
+Two numbers decide whether Listen acts or says ``didn't catch that'':
+\begin{itemize}[nosep]
+  \item \textbf{Hearing confidence}: how sure the speech engine is about the words (Whisper
+        reports a score per transcription).
+  \item \textbf{Match confidence}: how well the text fits a command (1.0 for an exact pattern
+        match, lower for fuzzy app or target names).
+\end{itemize}
+
+\noindent If either is below its threshold, Listen does nothing and says ``Didn't catch
+that''; otherwise it takes its best guess. Each command has a \texttt{risk} level
+(\texttt{low} by default, \texttt{high} for closing apps), and high-risk commands need higher
+scores.
+
+\begin{concept}{Calibration}
+Threshold values are not guessed. For the first one or two weeks, Listen logs both scores for
+every sentence and you mark whether it got it right. Plotting scores of right vs.\ wrong
+guesses shows where to draw the line. Choosing thresholds from measured data is called
+\textbf{calibration}; it is the same skill as choosing a classification cut-off in your
+data-analysis work.
+\end{concept}
+
+% =====================================================================
+\section{Commands in continuous mode}\label{sec:continuous}
+
+\textbf{Decision:} in continuous mode, commands run \emph{without} the wake word, from anyone
+in the room. The risk is \textbf{false triggers}: ordinary conversation, a video or the TV
+containing a sentence that matches a command. Patterns are anchored (the whole sentence must
+fit) and slots are typed, which already rejects most chatter (``so I closed chrome and left''
+does not fit \texttt{close \{app\}}). Free-text slots such as \texttt{play \{query\}}, and
+one-word routines such as ``DSA'', remain risky. Four guardrails apply \emph{only} in
+continuous mode:
+
+\begin{enumerate}[nosep]
+  \item \textbf{Standalone sentences only}: a command must be surrounded by a short silence
+        and be at most about 8 words, as a spoken command is, unlike a phrase inside a story.
+  \item \textbf{Stricter thresholds}: the confidence bars from
+        Section~\ref{sec:thresholds} are raised.
+  \item \textbf{Per-command policy}: each command has \texttt{continuous: allow}
+        (default), \texttt{confirm} (Listen asks ``Close Chrome?'' and waits for ``yes''), or
+        \texttt{block} (wake word required even in continuous mode). Closing apps defaults to
+        \texttt{confirm}.
+  \item \textbf{Busy-room switch}: continuous mode turns off by hotkey or by saying
+        ``continuous off''; it also falls back to wake-word mode automatically when speech
+        fills more than about 60\% of the last minute (a cheap heuristic, not real speaker
+        counting).
+\end{enumerate}
+\noindent And if something slips through anyway, undo is the safety net.
+
+% =====================================================================
 \section{Testing this design}
 The matcher is a pure function, so its tests are a simple table:
 
@@ -547,6 +675,10 @@ The matcher is a pure function, so its tests are a simple table:
 "play songs on the beach"           -> play,   query="songs on the beach", target=youtube
 "volume fifty"                      -> volume_set, number=50
 "research papers"                   -> no match
+"dsa"                               -> routine dsa (3 steps)
+"undo" 30 s after "volume 80"       -> volume restored
+"undo" 90 s after "volume 80"       -> "nothing to undo" (expired)
+"undo" after "open google"          -> "I can't undo that"
 "open vs code"                      -> open,   app="Visual Studio Code"
 \end{lstlisting}
 
