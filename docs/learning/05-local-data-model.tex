@@ -221,7 +221,7 @@ anything; ``undo'' remains a separate command, so you decide which you want.
 
 \paragraph{By review.} A developer command lists recent commands with their scores:
 \begin{lstlisting}
-python -m listen_agent review --last 20
+python -m listen_agent review --last 20      # [r]ight / [w]rong / [d]elete
   #12  09:41  "search what is an atom"   search   stt 0.93  match 1.00   [r]ight / [w]rong / skip
   #13  09:44  "close crow"               close    stt 0.61  match 0.82   [r]ight / [w]rong / skip
 \end{lstlisting}
@@ -253,6 +253,11 @@ what careful systems do (and what data-protection laws often require).
 \noindent \texttt{commands} and \texttt{usage\_daily} are not purged. They are small (a few
 hundred bytes per command; a year of heavy use is a few megabytes) and they are the history
 your analytics are built on.
+
+\paragraph{Deleting on request (decided).} Command history is kept \textbf{until you choose to
+delete it}. You can delete single commands from the review list (\texttt{[d]elete}) and later
+from the web app. A deletion must also reach the cloud copy; how that works (``tombstones'') is
+part of the sync design, Section~5.
 
 % =====================================================================
 \section{No audio on disk}
