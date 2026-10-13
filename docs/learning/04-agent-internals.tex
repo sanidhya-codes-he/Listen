@@ -336,9 +336,11 @@ to speed up the model, the wrong place to start.
 
 \subsection{How we will measure}
 \begin{enumerate}[nosep]
-  \item Record about 20 of your real commands once, as audio files.
-  \item Run each file through \texttt{tiny.en} and \texttt{base.en} (both in the fast
-        \texttt{int8} format): time per file, and words wrong per file.
+  \item In \textbf{benchmark mode}, speak about 20 of your real commands. No audio is ever saved
+        (Doc~05): each clip stays in memory only long enough to be transcribed.
+  \item Each clip goes through \texttt{tiny.en} \emph{and} \texttt{base.en} (both in the fast
+        \texttt{int8} format), one after the other, so both models hear identical audio. Only
+        the text results and timings are stored, then the clip is discarded.
   \item Pick the smallest model that is both under budget and accurate enough. Expectation
         (to be verified, not assumed): \texttt{base.en} is noticeably more accurate and still
         fits.

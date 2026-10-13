@@ -1,0 +1,350 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+
+\definecolor{local}{HTML}{2E7D32}
+\definecolor{cloud}{HTML}{1565C0}
+\definecolor{warn}{HTML}{C62828}
+\definecolor{idea}{HTML}{6A1B9A}
+\definecolor{soft}{HTML}{F5F5F5}
+
+\newtcolorbox{concept}[1]{colback=idea!4,colframe=idea!70,fonttitle=\bfseries,title={Concept: #1},breakable}
+\newtcolorbox{analogy}{colback=local!5,colframe=local!70,fonttitle=\bfseries,title={Analogy},breakable}
+\newtcolorbox{why}{colback=cloud!4,colframe=cloud!70,fonttitle=\bfseries,title={Why it is done this way},breakable}
+\newtcolorbox{caution}{colback=warn!4,colframe=warn!70,fonttitle=\bfseries,title={Watch out},breakable}
+\newtcolorbox{exercise}{colback=soft,colframe=black!50,fonttitle=\bfseries,title={Check yourself},breakable}
+
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{soft},frame=single,
+        rulecolor=\color{black!25},columns=fullflexible,keepspaces=true,
+        showstringspaces=false,breaklines=true}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Listen -- Learning Doc 05}
+\rhead{\small The Local Data Model}
+\cfoot{\thepage}
+
+\title{\textbf{Listen}\\[4pt]\large Learning Doc 05: The Local Data Model\\
+       \normalsize What Listen remembers, where, for how long, and who may see it}
+\author{Detailed design, Section 4}
+\date{13 October 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent Everything Listen does produces data: commands you gave, sentences it overheard, the
+apps you used. This document designs the database on your laptop that holds it: the tables,
+the columns, which data is private and which may be synced, how private data deletes itself
+after 30 days, how you mark mistakes, and how the database can change shape later without
+losing anything. You already know tables from pandas; here you will see how a real database
+thinks about them.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =====================================================================
+\section{Decisions this section is built on}
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{Topic} & \textbf{Decision} \\
+\midrule
+Private data lifetime & 30 days, then deleted automatically. \\
+Audio recordings      & Never saved to disk. Audio lives in memory only, and only until it is transcribed. \\
+Marking mistakes      & Both: say ``that's wrong'' right away, \emph{and} a review list for later. \\
+Sync (from Doc 01)    & Commands and summaries may go to the cloud; overheard speech and raw window titles never do. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =====================================================================
+\section{From DataFrames to a database}
+
+\begin{concept}{Relational database}
+A \textbf{relational database} stores data in \textbf{tables}: rows (one per thing, e.g.\ one
+command) and columns (one per property, e.g.\ the time). That is exactly a pandas DataFrame.
+The differences: a database lives on disk and survives restarts, many parts of a program can
+read and write it safely, it can enforce rules (``this column may never be empty''), and it
+answers questions in \textbf{SQL} without loading everything into memory.
+\end{concept}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{X X}
+\toprule
+\textbf{pandas (what you know)} & \textbf{SQL (what Listen uses)} \\
+\midrule
+\texttt{df[df.result == "executed"]} & \texttt{SELECT * FROM commands WHERE result = 'executed'} \\
+\texttt{df.groupby("app").seconds.sum()} & \texttt{SELECT app, SUM(seconds) FROM usage\_daily GROUP BY app} \\
+\texttt{pd.concat([df, new\_row])} & \texttt{INSERT INTO commands (\ldots) VALUES (\ldots)} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{concept}{SQLite}
+\textbf{SQLite} is a complete SQL database stored in \textbf{one file}, with no server program
+running. Python includes it (\texttt{import sqlite3}): nothing to install, almost no memory.
+Phones, browsers and most desktop apps use it for exactly this kind of local data.
+\end{concept}
+
+\noindent The file lives at \texttt{\%APPDATA\%\textbackslash Listen\textbackslash listen.db},
+outside the code repository (Doc~02: your data never goes in git). When we build, you will be
+able to open it with pandas: \texttt{pd.read\_sql("SELECT * FROM commands", conn)}.
+
+% =====================================================================
+\section{The privacy split, as a rule}
+
+Every table is either \textcolor{cloud}{\textbf{syncable}} (may go to the cloud) or
+\textcolor{warn}{\textbf{private}} (never leaves the laptop, deleted after 30 days). A table
+never mixes the two, so the sync code can follow one rule: \emph{only read syncable tables}.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Table} & \textbf{Kind} & \textbf{Holds} \\
+\midrule
+\texttt{commands}        & \textcolor{cloud}{syncable} & Everything you asked Listen to do, and what happened \\
+\texttt{usage\_daily}    & \textcolor{cloud}{syncable} & Seconds per app and per site, per day \\
+\texttt{continuous\_log} & \textcolor{warn}{private, 30 days} & What continuous mode overheard that was not a command \\
+\texttt{app\_sessions}   & \textcolor{warn}{private, 30 days} & Each stretch of time an app was in front, with its raw window title \\
+\texttt{meta}            & local only & Database version and housekeeping dates \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{caution}
+\textbf{A subtle privacy rule.} In wake-word and push-to-talk modes, a sentence that does
+\emph{not} match a command was still \emph{spoken to Listen}, so it goes into \texttt{commands}
+as \texttt{not\_matched} (useful: ``commands you tried that failed''). In continuous mode, an
+unmatched sentence is just someone in the room talking, so it goes to the private
+\texttt{continuous\_log} instead. Same kind of data, different table, because the
+\emph{situation} decides whether it is private.
+\end{caution}
+
+% =====================================================================
+\section{The tables in detail}
+
+\begin{concept}{Primary key, UUID and UTC timestamps}
+Every table has an \textbf{\texttt{id}}: a number the database assigns, unique within the table
+(the \textbf{primary key}). Syncable tables also get a \textbf{\texttt{uuid}}: a random
+128-bit identifier that is unique \emph{everywhere}, so the server can recognise ``I already
+have this row'' even if it is sent twice. All times are stored in \textbf{UTC} (world time,
+no daylight saving) and converted to Indian time only for display; mixing time zones in
+stored data is a classic source of bugs.
+\end{concept}
+
+\subsection{\texttt{commands} (syncable)}
+\begin{center}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Column} & \textbf{Type} & \textbf{Meaning} \\
+\midrule
+\texttt{id}, \texttt{uuid}, \texttt{user\_id} & int, text, text & Identity (Doc~01: \texttt{user\_id} from day one) \\
+\texttt{ts}              & text (UTC) & When you finished speaking \\
+\texttt{mode}            & text & \texttt{wake}, \texttt{push\_to\_talk} or \texttt{continuous} \\
+\texttt{heard}           & text & The transcribed sentence \\
+\texttt{command\_id}     & text & Which command matched (empty if none) \\
+\texttt{slots}           & text (JSON) & Filled slots, e.g.\ \texttt{\{"query": "what is an atom"\}} \\
+\texttt{action}          & text & The primitive (or \texttt{routine}) \\
+\texttt{result}          & text & \texttt{executed}, \texttt{failed}, \texttt{not\_matched}, \texttt{low\_confidence}, \texttt{cancelled} \\
+\texttt{error}           & text & What went wrong, if anything \\
+\texttt{stt\_conf}, \texttt{match\_conf} & real & The two confidence scores (Doc~03 \S11) \\
+\texttt{ms\_silence}, \texttt{ms\_stt}, \texttt{ms\_action}, \texttt{ms\_total} & int & The latency budget, measured (Doc~04 \S8) \\
+\texttt{model}           & text & Which speech model produced \texttt{heard} \\
+\texttt{undone}          & int (0/1) & Whether you undid it \\
+\texttt{verdict}         & text & Empty, \texttt{right} or \texttt{wrong} (Section~\ref{sec:verdict}) \\
+\texttt{verdict\_source} & text & \texttt{voice} or \texttt{review} \\
+\texttt{synced\_at}      & text & Empty until uploaded (used by sync, Section~5 of the design) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{why}
+Timings, confidences and verdicts live on the \emph{same} row as the command. That one table is
+then enough for calibration (``what confidence did the wrong guesses have?''), for the latency
+report, and for the ``commands that failed'' list, each a single SQL query or one
+\texttt{pd.read\_sql}.
+\end{why}
+
+\subsection{\texttt{continuous\_log} (private)}
+\texttt{id}, \texttt{ts}, \texttt{heard}, \texttt{stt\_conf}. Nothing else: the smallest record
+that still lets you read back what was overheard.
+
+\subsection{\texttt{app\_sessions} (private)}
+\texttt{id}, \texttt{started}, \texttt{ended}, \texttt{process} (e.g.\ \texttt{chrome.exe}),
+\texttt{app} (``Google Chrome''), \texttt{raw\_title} (private), \texttt{site} (cleaned, e.g.\
+``Google Search''; designed with the usage tracker). One row per stretch of time an app stayed
+in front.
+
+\subsection{\texttt{usage\_daily} (syncable)}
+\texttt{date}, \texttt{app}, \texttt{site}, \texttt{seconds}, plus \texttt{uuid},
+\texttt{user\_id}, \texttt{synced\_at}. One row per app/site per day.
+
+\begin{concept}{Aggregation (roll-up)}
+\textbf{Aggregation} turns many detailed rows into a few summary rows: 600 sessions in a day
+become ``Chrome: 3h 12m, of which Google Search: 40m''. A \textbf{roll-up} job does this every
+hour from \texttt{app\_sessions} into \texttt{usage\_daily}. Because the summary is computed
+\emph{before} the 30-day purge, deleting old private sessions never deletes your long-term
+statistics. It is the same as a pandas \texttt{groupby} whose result you keep after dropping
+the raw data.
+\end{concept}
+
+\subsection{\texttt{meta}}
+A two-column key/value table: \texttt{schema\_version}, \texttt{last\_purge},
+\texttt{last\_rollup}.
+
+% =====================================================================
+\section{Marking mistakes (``that's wrong'')}\label{sec:verdict}
+
+\paragraph{By voice.} ``That's wrong'' (also ``wrong'', ``that was wrong'') is a built-in
+command. It sets \texttt{verdict = wrong}, \texttt{verdict\_source = voice} on the most recent
+command row, plays the ``done'' chime and shows ``Marked as wrong''. It does \emph{not} undo
+anything; ``undo'' remains a separate command, so you decide which you want.
+
+\paragraph{By review.} A developer command lists recent commands with their scores:
+\begin{lstlisting}
+python -m listen_agent review --last 20
+  #12  09:41  "search what is an atom"   search   stt 0.93  match 1.00   [r]ight / [w]rong / skip
+  #13  09:44  "close crow"               close    stt 0.61  match 0.82   [r]ight / [w]rong / skip
+\end{lstlisting}
+\noindent The web app gets the same list later. Rows you never mark stay empty, and
+calibration only uses marked rows.
+
+\begin{why}
+Calibration needs \emph{labelled} examples, just like training a classifier. Voice marking
+catches mistakes in the moment; review catches the ones you only notice later, and also lets
+you mark \emph{right} answers, which calibration needs just as much as wrong ones.
+\end{why}
+
+% =====================================================================
+\section{Data retention: the 30-day purge}
+
+\begin{concept}{Retention policy}
+A \textbf{retention policy} states how long each kind of data is kept. Keeping data
+``forever, just in case'' is a privacy risk and a liability; deleting it on a clear schedule is
+what careful systems do (and what data-protection laws often require).
+\end{concept}
+
+\noindent The purge runs at start-up and then every 6 hours:
+\begin{lstlisting}
+1. run the roll-up first (so usage_daily is up to date)
+2. DELETE FROM continuous_log WHERE ts      < now - 30 days
+3. DELETE FROM app_sessions   WHERE ended   < now - 30 days
+4. record last_purge in meta
+\end{lstlisting}
+\noindent \texttt{commands} and \texttt{usage\_daily} are not purged. They are small (a few
+hundred bytes per command; a year of heavy use is a few megabytes) and they are the history
+your analytics are built on.
+
+% =====================================================================
+\section{No audio on disk}
+Audio exists only as an array in memory: from the microphone, through the listener, into the
+transcriber, then it is discarded. No table has an audio column, and no code path writes a
+sound file.
+
+\begin{caution}
+This affects the speed benchmark from Doc~04, which planned to ``record about 20 commands as
+audio files''. The benchmark is redesigned to respect this rule: in \textbf{benchmark mode} you
+speak each test command live; the clip is held in memory, transcribed by \texttt{tiny.en}
+\emph{and} \texttt{base.en} one after the other (so both models get identical audio, a fair
+comparison), the two results and timings are stored as text, and the clip is discarded. The
+cost: you speak the test set once per benchmark run instead of reusing recordings.
+\end{caution}
+
+% =====================================================================
+\section{Making the database safe to use from several threads}
+
+\begin{concept}{Write-ahead logging (WAL)}
+Normally SQLite blocks readers while someone writes. In \textbf{WAL mode}, new writes go to a
+side file first, so the review command (or a pandas notebook) can read the database
+\emph{while} the agent keeps writing. One line turns it on:
+\texttt{PRAGMA journal\_mode=WAL}.
+\end{concept}
+
+\noindent Together with Doc~04's rule that \emph{only the storage thread writes}, this gives
+safe access: one writer, any number of readers. The storage thread writes in small
+\textbf{transactions} (a group of changes that is saved completely or not at all), batching
+events every second, so a crash can never leave half a command written.
+
+\begin{concept}{Index}
+An \textbf{index} is a sorted lookup structure on a column, like the index at the back of a
+book: instead of reading every row to find commands from today, the database jumps straight
+there. We add indexes on \texttt{commands.ts} and \texttt{synced\_at}, and on the time columns
+the purge uses. Each index makes writes slightly slower, so we add only those we query.
+\end{concept}
+
+% =====================================================================
+\section{Changing the database later: migrations}
+
+\begin{concept}{Schema migration}
+Your tables will change: next month you may want a \texttt{routine\_step} column. You cannot just
+edit the \texttt{CREATE TABLE} line, because your real database already exists with real data.
+A \textbf{migration} is a small numbered script that changes an existing database from one
+version to the next (``add column X''). On start-up the agent reads \texttt{schema\_version}
+from \texttt{meta} and runs every migration newer than it, in order.
+\end{concept}
+
+\begin{lstlisting}
+agent/listen_agent/storage/migrations/
+    001_initial.sql        -- creates the five tables
+    002_add_routine_step.sql   (example of a future change)
+\end{lstlisting}
+
+\begin{why}
+Without migrations, every change to the tables would mean deleting your database and losing your
+history. With them, your laptop's database upgrades itself safely, and the server's database
+(Section~6 of the design) will use the same idea.
+\end{why}
+
+% =====================================================================
+\section{Glossary}
+\begin{description}[style=nextline,leftmargin=1.2cm,itemsep=2pt]
+  \item[Aggregation / roll-up] Turning detailed rows into summary rows, kept separately.
+  \item[Index] A lookup structure that makes searching a column fast.
+  \item[Migration] A numbered script that upgrades an existing database's structure.
+  \item[Primary key] A column that uniquely identifies each row in a table.
+  \item[Relational database] Data stored as tables of rows and columns, queried with SQL.
+  \item[Retention policy] How long each kind of data is kept before deletion.
+  \item[SQL] The language for querying and changing relational databases.
+  \item[SQLite] A full SQL database in a single file, built into Python.
+  \item[Transaction] A group of changes saved completely or not at all.
+  \item[UTC] World time with no time zones or daylight saving; how all times are stored.
+  \item[UUID] A random identifier unique across all machines.
+  \item[WAL] SQLite mode letting readers read while one writer writes.
+\end{description}
+
+% =====================================================================
+\section{Check your understanding}
+\begin{exercise}
+\begin{enumerate}
+  \item In continuous mode, someone says ``let's get food''. Which table does it go to, and why
+        not \texttt{commands}?
+  \item The purge deletes \texttt{app\_sessions} older than 30 days. Why does your
+        ``Chrome usage in March'' chart still work in June?
+  \item Why is every time stored in UTC rather than Indian time?
+  \item Write the SQL for: average \texttt{ms\_total} of executed commands today.
+  \item You add a column next month. Why can't you just edit the \texttt{CREATE TABLE} line?
+  \item Why does the review list let you mark \emph{right} answers too?
+  \item How does the benchmark compare two models fairly without saving audio?
+\end{enumerate}
+\end{exercise}
+
+\end{document}
