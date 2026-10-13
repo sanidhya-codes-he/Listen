@@ -192,7 +192,7 @@ yes/no?'' has one clear answer instead of a tangle of \texttt{if} statements.
 \node[st,draw=cloud] (tr) at (7.4,-3) {\textbf{Transcribing}};
 \node[st,draw=warn] (conf) at (0,-3) {\textbf{Awaiting yes/no}\\\scriptsize up to 8\,s};
 \draw[arr] (idle) -- node[above,lab]{wake word / hotkey pressed /\\speech (continuous mode)} (cap);
-\draw[arr] (cap) -- node[right,lab]{0.5\,s of silence /\\hotkey released / 8\,s max} (tr);
+\draw[arr] (cap) -- node[right,lab]{0.7\,s of silence /\\hotkey released / 8\,s max} (tr);
 \draw[arr] (tr.north west) -- node[above,sloped,lab]{done} (idle.south east);
 \draw[arr] (tr) -- node[below,lab]{confirmation needed} (conf);
 \draw[arr] (conf) -- node[left,lab]{yes / no /\\timeout} (idle);
@@ -240,6 +240,13 @@ not caught  & didn't catch that / failed / can't undo / cancelled \\
 While a chime plays, the listener ignores the microphone for that fraction of a second, so
 Listen never ``hears'' its own sound.
 
+\paragraph{Continuous mode is quiet.} In continuous mode, every conversation in the room starts
+a capture, so chiming there would mean a chime (and a ``didn't catch that'') after almost every
+sentence anyone says. So in continuous mode Listen plays \textbf{no} ``listening'' chime and gives
+\textbf{no} ``not caught'' chime or pop-up. Only when a command actually \emph{runs} do you get the
+``done'' chime and its pop-up (and the question chime for the few commands still set to
+\texttt{confirm}, such as closing an app).
+
 \subsection{Pop-ups}
 A small Windows notification at the bottom right: ``Searching Google: what is an atom'',
 ``Didn't catch that'', ``Start DSA? Say yes or no''. These use the standard Windows
@@ -264,7 +271,7 @@ volume, and put each one back exactly where it was.
 \end{itemize}
 
 \begin{caution}
-\textbf{Ducking does not happen in continuous mode} (by design, open for discussion). In
+\textbf{Ducking does not happen in continuous mode} (decided). In
 continuous mode, capture starts whenever \emph{anyone} speaks, so ducking there would pump your
 music down and up during every conversation in the room. Ducking stays for wake-word and
 push-to-talk, where capture starts only when you asked for it.
@@ -302,8 +309,8 @@ shows \emph{which} stage to fix.
 \toprule
 \textbf{Stage} & \textbf{Budget} & \textbf{Notes} \\
 \midrule
-Detect you stopped talking & 500\,ms & The silence the listener waits for. Often the \emph{biggest} item. \\
-Speech-to-text             & 700\,ms & The number we must measure for \texttt{tiny.en} vs.\ \texttt{base.en}. \\
+Detect you stopped talking & 700\,ms & The silence the listener waits for. Starts at 0.7\,s (decided); tested at 0.5--0.9\,s. \\
+Speech-to-text             & 500\,ms & Now the tightest stage: the number we must measure for \texttt{tiny.en} vs.\ \texttt{base.en}. \\
 Matching                   & $<$5\,ms & Pure function (Doc~03). \\
 Action starts              & 200\,ms & Launching the browser or app; the app's own loading time is not counted. \\
 Feedback                   & 50\,ms  & Chime + pop-up. \\
@@ -312,6 +319,12 @@ Feedback                   & 50\,ms  & Chime + pop-up. \\
 \bottomrule
 \end{tabularx}
 \end{center}
+
+\noindent Raising the silence wait from 0.5\,s to 0.7\,s took 200\,ms from somewhere: the
+speech-to-text allowance dropped from 700\,ms to 500\,ms. That is exactly how a budget works:
+a total stays fixed, and spending more in one row means spending less in another. If the
+benchmark shows the model needs more than 500\,ms, we choose between a smaller model, a shorter
+silence, or accepting a total slightly above 1.5\,s, and we choose with numbers.
 
 \begin{why}
 Notice that the first row is not the AI model at all: it is \emph{waiting for silence}. Make
@@ -332,7 +345,7 @@ to speed up the model, the wrong place to start.
 \end{enumerate}
 \noindent The agent also stamps every event with a time, so the terminal shows the real
 breakdown of every command you give, for example
-\texttt{silence 500 | stt 420 | match 1 | action 160 | total 1081 ms}.
+\texttt{silence 700 | stt 420 | match 1 | action 160 | total 1281 ms}.
 
 % =====================================================================
 \section{Start-up, shut-down and failures}
@@ -367,7 +380,7 @@ Listen waits. Unknown app: ``CLion not found'', the rest of the routine still ru
 [09:41:17] heard  "search what is an atom"   (confidence 0.93)
 [09:41:17] match  search  query="what is an atom"  target=google  (1.00)
 [09:41:17] done   open_url google.com/search?q=what+is+an+atom
-           timing silence 500 | stt 412 | match 1 | action 140 | total 1053 ms
+           timing silence 700 | stt 412 | match 1 | action 140 | total 1253 ms
 \end{lstlisting}
 \noindent Every line is one event on the bus. When something misbehaves, you will see
 \emph{which stage} did it, which is the whole point of building the terminal shell first.
@@ -401,7 +414,7 @@ Listen waits. Unknown app: ``CLion not found'', the rest of the routine still ru
   \item Listen crashes while Spotify is ducked to 20\%. What happens on the next start, and why
         is the original level safe?
   \item Your total latency is 2.1\,s and the breakdown says
-        \texttt{silence 500 | stt 1350}. What do you try first?
+        \texttt{silence 700 | stt 1350}. What do you try first?
   \item Why does push-to-talk feel faster than the wake word, even with the same model?
 \end{enumerate}
 \end{exercise}

@@ -654,8 +654,9 @@ continuous mode:
         Section~\ref{sec:thresholds} are raised.
   \item \textbf{Per-command policy}: each command has \texttt{continuous: allow}
         (default), \texttt{confirm} (Listen asks ``Close Chrome?'' and waits for ``yes''), or
-        \texttt{block} (wake word required even in continuous mode). Closing apps and
-        \textbf{all routines} default to \texttt{confirm} (``Start DSA?'').
+        \texttt{block} (wake word required even in continuous mode). Closing apps defaults
+        to \texttt{confirm}. \textbf{Routines run immediately} (\texttt{allow}): a misheard
+        ``DSA'' is a trade-off you accepted, and undo closes the apps it launched.
   \item \textbf{Busy-room switch}: continuous mode turns off by hotkey or by saying
         ``continuous off''; it also falls back to wake-word mode automatically when speech
         fills more than about 60\% of the last minute (a cheap heuristic, not real speaker
