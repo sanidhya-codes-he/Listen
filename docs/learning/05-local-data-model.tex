@@ -172,7 +172,9 @@ stored data is a classic source of bugs.
 \texttt{undone}          & int (0/1) & Whether you undid it \\
 \texttt{verdict}         & text & Empty, \texttt{right} or \texttt{wrong} (Section~\ref{sec:verdict}) \\
 \texttt{verdict\_source} & text & \texttt{voice} or \texttt{review} \\
-\texttt{synced\_at}      & text & Empty until uploaded (used by sync, Section~5 of the design) \\
+\texttt{synced\_at}      & text & Empty until uploaded (used by sync, Doc~06) \\
+\texttt{updated\_at}     & text & Last change to this row (a verdict or undo changes a row \emph{after} it was uploaded) \\
+\texttt{deleted\_at}     & text & Set when you delete it; the row is removed once the cloud has the deletion (Doc~06) \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -196,7 +198,8 @@ in front.
 
 \subsection{\texttt{usage\_daily} (syncable)}
 \texttt{date}, \texttt{app}, \texttt{site}, \texttt{seconds}, plus \texttt{uuid},
-\texttt{user\_id}, \texttt{synced\_at}. One row per app/site per day.
+\texttt{user\_id}, \texttt{synced\_at}, \texttt{updated\_at}. One row per app/site per day.
+Today's rows keep growing as the roll-up runs, which is exactly why \texttt{updated\_at} exists.
 
 \begin{concept}{Aggregation (roll-up)}
 \textbf{Aggregation} turns many detailed rows into a few summary rows: 600 sessions in a day
@@ -216,8 +219,18 @@ A two-column key/value table: \texttt{schema\_version}, \texttt{last\_purge},
 
 \paragraph{By voice.} ``That's wrong'' (also ``wrong'', ``that was wrong'') is a built-in
 command. It sets \texttt{verdict = wrong}, \texttt{verdict\_source = voice} on the most recent
-command row, plays the ``done'' chime and shows ``Marked as wrong''. It does \emph{not} undo
-anything; ``undo'' remains a separate command, so you decide which you want.
+command row, plays the ``done'' chime and shows which command it marked: ``Marked wrong:
+`search what is an atom'\,''. It does \emph{not} undo anything; ``undo'' remains a separate
+command, so you decide which you want.
+
+\begin{itemize}[nosep]
+  \item \textbf{Window: 60 seconds} (decided), the same as undo. After that, or to mark an older
+        command, use the review list, where you pick the exact row yourself.
+  \item \textbf{Commands about commands} (``undo'', ``that's wrong'') never count as ``the
+        last command'' and never replace the undo slot. Otherwise saying ``that's wrong'' and
+        then ``undo'' would fail, because ``that's wrong'' itself would have become the thing to
+        undo.
+\end{itemize}
 
 \paragraph{By review.} A developer command lists recent commands with their scores:
 \begin{lstlisting}

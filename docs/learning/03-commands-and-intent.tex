@@ -371,8 +371,9 @@ of v1.
   \item On first run it is copied to your user-data folder
         (\texttt{\%APPDATA\%\textbackslash Listen\textbackslash commands.yaml}). That copy is
         yours: edits go there, and code updates never overwrite it.
-  \item Once sync exists (Section 5 of the design), the cloud holds the master copy, so edits
-        made in the web app reach your laptop.
+  \item The \textbf{YAML files on your laptop are the master copy} (decided in Section~5). Edits
+        made in the web app are sent down and written into these files; if both sides changed
+        the same command, the laptop version wins. Details in Doc~06.
 \end{itemize}
 
 \subsection{Validation on every load}
@@ -582,6 +583,7 @@ one flag is allowed, never arbitrary program arguments, so the allowlist stays i
   \item If you say ``undo'' within \textbf{60 seconds}, Listen reverses it and empties the slot.
   \item The slot is replaced only by the next \emph{successfully executed} command. A misheard
         or unmatched sentence leaves it alone, so the undo is still there when you need it.
+        Commands about commands (``undo'', ``that's wrong'') never replace it either.
   \item If the action has no reliable reverse, Listen says ``I can't undo that'' and does
         nothing. It never guesses.
 \end{enumerate}
