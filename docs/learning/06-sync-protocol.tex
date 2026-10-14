@@ -64,7 +64,8 @@ minutes.
 \toprule
 \textbf{Topic} & \textbf{Decision} \\
 \midrule
-Command files     & The YAML files on the laptop are the master. They can be edited in PyCharm \emph{or} in the web app; web edits are written into the YAML. \\
+Command files     & The YAML files on the laptop are the master, kept in the repository's \texttt{commands/} folder (versioned in git). They can be edited in PyCharm \emph{or} in the web app; web edits are written into the YAML. \\
+Reconnecting      & Sync immediately when Windows reports the network is back. \\
 Conflicts         & If both sides changed the same command, the laptop version wins. \\
 Frequency         & Every 5 minutes. Lightweight first. The dashboard refreshes every 5 minutes too. \\
 Deleting history  & From the review list and the web app (no voice). A deletion on one side reaches the other. \\
@@ -139,7 +140,22 @@ sent (\texttt{synced\_at} is empty) or it changed since it was sent
 a command wrong, or today's usage total grows, the row changes \emph{after} it was uploaded.
 
 \paragraph{Batches.} At most 500 rows per request; if there are more (after a week offline),
-the next sync continues immediately until the backlog is gone.
+the next sync continues immediately until the backlog is gone. Why a limit at all? One huge
+request after a long offline stretch would (1) lose \emph{all} progress if the connection drops
+near the end, (2) risk hitting network and server time limits on slow Wi-Fi, and (3) need the
+whole backlog in memory on both sides. With batches, every confirmed batch is permanently done.
+Why 500: a row is about 0.5--1\,KB, so a batch is roughly 250--500\,KB, under a second on
+ordinary internet. Fifty would mean dozens of round trips for a week's backlog; five thousand
+brings back the problems above. It is a tunable starting value, and in normal use (0--20 rows
+per sync) it never comes into play.
+
+\begin{concept}{Outbox pattern (store and forward)}
+There is no separate queue of ``messages to send''. The unsent data \emph{is} the rows
+themselves, sitting in SQLite with \texttt{synced\_at} empty or older than \texttt{updated\_at};
+``what to send'' is just a query. Nothing expires: rows wait for days or months if needed, and are
+marked sent only after the server confirms them. The 30-day purge only touches the private
+tables, which are never in the outbox at all.
+\end{concept}
 
 \begin{concept}{Idempotency}
 An operation is \textbf{idempotent} if doing it twice has the same effect as doing it once.
@@ -158,6 +174,12 @@ If a sync fails (no internet, server down), the next attempt waits longer: 5, 10
 most 30 minutes. This is \textbf{exponential back-off}: it stops a laptop with no Wi-Fi from
 wasting effort retrying every few seconds. One success resets it to 5 minutes.
 \end{concept}
+
+\paragraph{Back online: sync immediately (decided).} Waiting up to 30 minutes after the
+internet returns is unnecessary. Windows announces network changes; the sync thread subscribes
+to that notification and, when a connection appears, syncs at once instead of waiting for the
+back-off timer. Subscribing costs nothing while waiting: Windows wakes the thread only when the
+network actually changes.
 
 % =====================================================================
 \section{Deleting: tombstones}
@@ -180,12 +202,33 @@ the row is removed for real.
         change log $\to$ next sync returns the uuid $\to$ laptop removes its copy.
 \end{itemize}
 
+\paragraph{The resurrection problem, and the server's tombstones.} A tombstone is crossing an
+entry out of a shared notebook instead of tearing the page out: anyone reading later still learns
+it was deleted. Consider this sequence:
+\begin{enumerate}[nosep]
+  \item Monday: a command syncs to the server.
+  \item Tuesday: you delete it in the web app; the server removes it.
+  \item Tuesday evening, offline: you mark that same command ``wrong'' in the review list, so its
+        \texttt{updated\_at} changes and the laptop wants to re-upload it.
+  \item Wednesday: the upload arrives; an upsert finds no such row and \emph{inserts it again}.
+        Your deleted command is back.
+\end{enumerate}
+\noindent To prevent this, the server also keeps a tombstone (the uuid and the deletion time, about
+40 bytes, kept indefinitely). Any upload of a tombstoned uuid is refused, and the laptop removes
+its copy when it receives the deletion.
+
 \begin{concept}{Cursor (change log)}
 The server numbers every change it makes (``change \#1856: row uuid-9 deleted''). The laptop
 remembers the last number it has seen, the \textbf{cursor}. Each sync asks for ``everything
 after \#1841''. Nothing is missed, nothing is sent twice, and the server does not have to
 remember which laptop has seen what: the laptop keeps its own place, like a bookmark.
 \end{concept}
+
+\noindent \textbf{Where it lives:} the numbered change log is on the server; the cursor is on the
+laptop, in the \texttt{meta} table. Like a book: the publisher prints the page numbers, each
+reader keeps a bookmark. A second device would simply have its own bookmark, and if the laptop's
+database were lost, the cursor restarts at 0 and the laptop re-reads every change; nothing
+breaks.
 
 % =====================================================================
 \section{Commands: two editors, one master}
@@ -225,7 +268,14 @@ report every status in the next sync
 \end{lstlisting}
 
 \noindent The web app shows each edit's status: \emph{waiting for laptop}, \emph{applied},
-\emph{invalid}, or \emph{overridden by a change on your laptop}.
+\emph{invalid}, or \emph{overridden by a change on your laptop}. ``Waiting for laptop'' does
+\emph{not} ask you to confirm anything: it only means the edit is stored on the server and the
+laptop has not collected it yet (it is offline, or the next sync has not happened). The laptop
+applies it automatically; online, that takes at most about 5 minutes.
+
+\paragraph{Edge case: the file is open in PyCharm.} Listen sees only what is saved on disk. If
+you have \emph{unsaved} changes to the same file when a web edit is written, PyCharm notices the
+file changed on disk and asks which version to keep. Nothing is lost silently.
 
 \begin{concept}{Optimistic concurrency}
 Rather than locking a command while someone edits it, each edit carries the version it was
@@ -268,7 +318,7 @@ full design of accounts and logins belongs to the server section (Section 6).
 \toprule
 \textbf{Situation} & \textbf{What happens} \\
 \midrule
-No internet for a week & Everything works locally; rows wait; back-off keeps retries rare; the first successful sync uploads the backlog in batches. \\
+No internet for a week & Everything works locally; rows wait (never deleted); back-off keeps retries rare; when Windows reports the network is back, Listen syncs at once and uploads the backlog in batches. \\
 Reply lost after the server saved rows & Rows are re-sent; upsert by uuid ignores the duplicates. \\
 Web edit and PyCharm edit to the same command & Laptop wins; web app shows ``overridden''. \\
 Web edit that makes the file invalid & Write is reverted; web app shows ``invalid'' with the reason. \\

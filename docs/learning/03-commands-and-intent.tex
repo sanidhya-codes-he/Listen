@@ -367,10 +367,10 @@ of v1.
 
 \subsection{Where the file lives}
 \begin{itemize}[nosep]
-  \item A \textbf{default} command file ships inside the agent's code (versioned in git).
-  \item On first run it is copied to your user-data folder
-        (\texttt{\%APPDATA\%\textbackslash Listen\textbackslash commands.yaml}). That copy is
-        yours: edits go there, and code updates never overwrite it.
+  \item Command files live in the repository, in the top-level \texttt{commands/} folder
+        (decided in Section~5), so every change has git history and shows up in PyCharm.
+        The repository is public, so anything in these files is visible to anyone unless the
+        repository is made private.
   \item The \textbf{YAML files on your laptop are the master copy} (decided in Section~5). Edits
         made in the web app are sent down and written into these files; if both sides changed
         the same command, the laptop version wins. Details in Doc~06.
