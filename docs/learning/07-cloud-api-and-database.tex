@@ -1,0 +1,385 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+
+\definecolor{local}{HTML}{2E7D32}
+\definecolor{cloud}{HTML}{1565C0}
+\definecolor{warn}{HTML}{C62828}
+\definecolor{idea}{HTML}{6A1B9A}
+\definecolor{soft}{HTML}{F5F5F5}
+
+\newtcolorbox{concept}[1]{colback=idea!4,colframe=idea!70,fonttitle=\bfseries,title={Concept: #1},breakable}
+\newtcolorbox{analogy}{colback=local!5,colframe=local!70,fonttitle=\bfseries,title={Analogy},breakable}
+\newtcolorbox{why}{colback=cloud!4,colframe=cloud!70,fonttitle=\bfseries,title={Why it is done this way},breakable}
+\newtcolorbox{caution}{colback=warn!4,colframe=warn!70,fonttitle=\bfseries,title={Watch out},breakable}
+\newtcolorbox{exercise}{colback=soft,colframe=black!50,fonttitle=\bfseries,title={Check yourself},breakable}
+
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{soft},frame=single,
+        rulecolor=\color{black!25},columns=fullflexible,keepspaces=true,
+        showstringspaces=false,breaklines=true}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Listen -- Learning Doc 07}
+\rhead{\small Cloud API and Database}
+\cfoot{\thepage}
+
+\title{\textbf{Listen}\\[4pt]\large Learning Doc 07: The Cloud API and Database\\
+       \normalsize Endpoints, PostgreSQL tables, logins and secrets}
+\author{Detailed design, Section 6}
+\date{14 October 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent The server is the meeting point between your laptop and the web app. This document
+designs it: what an API endpoint is, every endpoint Listen needs, the PostgreSQL tables behind
+them, how you log in with a username and password without the server ever storing your password,
+how the laptop proves its identity, and how the design copes with a free server that falls
+asleep.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =====================================================================
+\section{Decisions this section is built on}
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{Topic} & \textbf{Decision} \\
+\midrule
+Budget      & Free tiers only. The server may sleep when idle and take 20--50\,s to wake. \\
+Web login   & Username and password. \\
+AI builder  & Runs on the \textbf{laptop} with your own API key in the agent's \texttt{.env}. The server needs no AI key; the web app edits commands with the guided form. \\
+From earlier & API-first (Doc~01), laptop-master commands and the sync protocol (Doc~06), \texttt{user\_id} on every row. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =====================================================================
+\section{What an API is, concretely}
+
+\begin{concept}{HTTP request and response}
+Every interaction is a \textbf{request} from a client and a \textbf{response} from the server.
+A request has a \textbf{method} (what kind of action), a \textbf{path} (which thing), optional
+\textbf{headers} (extra information, such as who you are) and an optional \textbf{body} (data,
+as JSON). A response has a \textbf{status code} (did it work?) and a body.
+\end{concept}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{Method} & \textbf{Meaning (convention)} \\
+\midrule
+\texttt{GET}    & Read something; never changes anything \\
+\texttt{POST}   & Create something, or perform an action \\
+\texttt{PATCH}  & Change part of something \\
+\texttt{DELETE} & Remove something \\
+\bottomrule
+\end{tabularx}
+\quad
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Meaning} \\
+\midrule
+200 / 201 & OK / created \\
+400 / 422 & Your request is malformed \\
+401 & Who are you? (not logged in) \\
+403 & You may not do that \\
+404 & No such thing \\
+500 & The server broke \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{concept}{Endpoint}
+An \textbf{endpoint} is one method + path the server answers, such as
+\texttt{GET /analytics/apps}. The full list of endpoints, with what each accepts and returns,
+\emph{is} the API. FastAPI generates an interactive web page documenting all of them
+automatically at \texttt{/docs}, which is what makes the API usable by others with no extra work.
+\end{concept}
+
+\begin{concept}{Validation with Pydantic}
+Every request body and response is described by a \textbf{Pydantic model}: a Python class with
+typed fields. FastAPI checks every incoming request against it \emph{before} your code runs:
+a missing field or a text where a number belongs is rejected with a 422 and a clear message.
+Your code never sees malformed data.
+\end{concept}
+
+% =====================================================================
+\section{The endpoints}
+
+Two kinds of caller, two kinds of proof (Section~\ref{sec:auth}): the \textbf{web app} uses a
+login session; the \textbf{laptop} uses a device token.
+
+\subsection{Logging in (web app)}
+\begin{center}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\texttt{POST /auth/login}  & Username + password $\to$ sets a session cookie \\
+\texttt{POST /auth/logout} & Ends the session \\
+\texttt{GET  /auth/me}     & Who am I logged in as? (the web app calls this on load) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\noindent There is deliberately \textbf{no sign-up endpoint}. Your account is created once with a
+command on the server (\texttt{python -m app.cli create-user}). A public sign-up page on a
+one-person system would only be an open door.
+
+\subsection{Devices (web app)}
+\begin{center}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\texttt{POST /devices}          & Create a device token for your laptop; shown \emph{once} \\
+\texttt{GET  /devices}          & List devices, with ``last synced'' time \\
+\texttt{DELETE /devices/\{id\}} & Revoke a device (its token stops working immediately) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Sync (laptop)}
+\texttt{POST /sync}: the single round trip from Doc~06.
+
+\subsection{Analytics (web app)}
+\begin{center}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\texttt{GET /analytics/summary}     & Totals for a date range: commands, success rate, top apps \\
+\texttt{GET /analytics/apps}        & Time per app and per site, per day \\
+\texttt{GET /analytics/commands}    & Command history, newest first, filterable, in pages \\
+\texttt{GET /analytics/failed}      & Sentences that did not match a command (what to add next) \\
+\texttt{GET /analytics/latency}     & Timing breakdown per stage over time (Doc~04 budget) \\
+\texttt{GET /analytics/calibration} & Confidence scores of right vs.\ wrong guesses (Doc~03 \S11) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{concept}{Pagination}
+A history of 20\,000 commands is not sent in one response. \texttt{/analytics/commands}
+returns one \textbf{page} (say 50 rows) plus a marker for ``the next page starts here''. The web
+app asks for more as you scroll. Small responses keep both the free server and the browser
+light.
+\end{concept}
+
+\subsection{History edits (web app)}
+\begin{center}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\texttt{PATCH /commands/\{uuid\}}  & Mark right / wrong (the web review list) \\
+\texttt{DELETE /commands/\{uuid\}} & Delete from history (tombstone, Doc~06) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\noindent Both are written to the change log, so the laptop applies them on its next sync, the
+same way web deletions already travel. These two fields (verdict and deletion) are the
+\emph{only} parts of history the web app may change; everything else about a command is a fact
+recorded by the laptop.
+
+\subsection{Command library (web app)}
+\begin{center}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\texttt{GET  /library}       & Latest snapshot of your command files, primitives and app names \\
+\texttt{POST /library/edits} & Submit a change from the guided form (becomes a pending edit) \\
+\texttt{GET  /library/edits} & Pending edits and their status (waiting / applied / invalid / overridden) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =====================================================================
+\section{The PostgreSQL tables}
+
+\begin{concept}{PostgreSQL, and why not SQLite here too}
+\textbf{PostgreSQL} is a database \emph{server}: a program that many connections can use at
+once, with stronger guarantees and richer types (such as \texttt{jsonb} for JSON you can search
+inside). The laptop has one program using its database, so SQLite's single file is ideal there.
+The server answers the laptop and the web app at the same time and runs on a host that may
+restart at any moment, so a real database server, which free hosts offer, is the right tool.
+\end{concept}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{Table} & \textbf{Holds} \\
+\midrule
+\texttt{users}             & id, username, \textbf{password hash} (never the password), created time \\
+\texttt{sessions}          & Logged-in browser sessions: hashed session id, user, expiry \\
+\texttt{devices}           & Your laptop(s): name, \textbf{token hash}, last sync time, revoked time \\
+\texttt{failed\_logins}    & Recent failed login attempts per username (for lock-out) \\
+\texttt{commands}          & The same columns as the laptop's \texttt{commands} table, plus \texttt{device\_id} and \texttt{received\_at} \\
+\texttt{usage\_daily}      & Same as the laptop's \\
+\texttt{tombstones}        & uuid + deletion time; uploads of these uuids are refused (Doc~06) \\
+\texttt{change\_log}       & Numbered list of server-side changes the laptop must apply: deletions, verdicts, pending edits \\
+\texttt{command\_snapshots}& Latest command files (\texttt{jsonb}), their hash, primitives, app names \\
+\texttt{pending\_edits}    & Edits from the web form: the edit, the hash it was based on, status, reason \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\noindent Every table that holds your data has \texttt{user\_id}, so adding more users later
+(the add-on from Doc~01) needs no table changes.
+
+\begin{concept}{ORM and migrations on the server}
+On the server we use \textbf{SQLAlchemy}, an \textbf{ORM} (object-relational mapper): each table
+is described once as a Python class, and queries can be written in Python. With it comes
+\textbf{Alembic}, which generates the numbered migration scripts (Doc~05 \S9) by comparing your
+classes to the real database. The laptop keeps plain SQL files: it has five simple tables and
+one user. Using the standard tool where each problem is bigger is a choice, not an inconsistency.
+\end{concept}
+
+% =====================================================================
+\section{Logging in without storing your password}\label{sec:auth}
+
+\begin{concept}{Password hashing}
+The server stores a \textbf{hash} of your password, never the password itself. A password hash
+function (we use \textbf{Argon2}) turns a password into a fingerprint that cannot be turned back.
+At login, the server hashes what you typed and compares fingerprints. Two extra properties:
+\begin{itemize}[nosep]
+  \item a random \textbf{salt} is mixed in per user, so two identical passwords give different
+        hashes and pre-computed tables of common passwords are useless;
+  \item it is \textbf{deliberately slow} (a fraction of a second), which you never notice once,
+        but which makes guessing millions of passwords impractical.
+\end{itemize}
+If the database ever leaked, the attacker would have fingerprints, not passwords.
+\end{concept}
+
+\begin{concept}{Session cookie}
+After a successful login, the server creates a random \textbf{session id}, stores its hash in
+\texttt{sessions}, and sends the id to the browser in a \textbf{cookie}. The browser
+automatically attaches it to every later request, so you log in once, not on every click. The
+cookie is marked \texttt{HttpOnly} (page scripts cannot read it, so a malicious script cannot
+steal it), \texttt{Secure} (only sent over HTTPS) and \texttt{SameSite} (not sent when another
+website tries to make requests on your behalf). Sessions expire after 30 days; logging out
+deletes it.
+\end{concept}
+
+\paragraph{Lock-out.} After 5 failed logins for a username within 15 minutes, further attempts
+for that username are refused for 15 minutes. Failures are counted in the database, not in
+memory, because a free server that sleeps forgets its memory.
+
+\paragraph{Device tokens.} The laptop uses the token from \texttt{POST /devices}, sent in a header
+on every sync. Like passwords, the server keeps only a \textbf{hash} of each token, so a leaked
+database does not leak working tokens; and revoking a device sets \texttt{revoked\_at}, which
+rejects its token at once.
+
+\begin{concept}{Authentication vs.\ authorisation}
+\textbf{Authentication}: \emph{who} are you? (password, session, device token).
+\textbf{Authorisation}: \emph{what} may you touch? Every query is filtered by the caller's
+\texttt{user\_id}, so even with multiple users, nobody can read another person's rows, by
+construction rather than by remembering to check.
+\end{concept}
+
+% =====================================================================
+\section{Secrets and configuration}
+Every secret lives in \textbf{environment variables}, set on the host's dashboard in production
+and in a git-ignored \texttt{.env} file during development:
+\begin{lstlisting}
+# server/.env  (never committed; server/.env.example lists the names with empty values)
+DATABASE_URL=postgresql://...
+SESSION_SECRET=...
+WEB_APP_ORIGIN=https://...
+
+# agent/.env   (never committed)
+LISTEN_SERVER_URL=https://...
+LISTEN_DEVICE_TOKEN=...
+ANTHROPIC_API_KEY=...        # you paste this yourself; the AI builder reads it here
+\end{lstlisting}
+\noindent The server needs no AI key at all, because the AI builder runs on the laptop.
+
+\begin{concept}{CORS}
+Browsers block a web page on one address from calling an API on another address unless the API
+explicitly allows it. That rule is \textbf{CORS} (cross-origin resource sharing). The server
+allows exactly one origin, your web app's address (\texttt{WEB\_APP\_ORIGIN}), and refuses every
+other website.
+\end{concept}
+
+% =====================================================================
+\section{Living with a server that sleeps}
+
+Free hosts put an idle server to sleep and wake it on the next request, which then takes 20--50
+seconds. The design absorbs this:
+\begin{itemize}[nosep]
+  \item \textbf{Laptop sync} uses a 60-second timeout. A request that still fails is treated as
+        ``offline'': the outbox waits and the back-off from Doc~06 applies. Nothing is lost.
+  \item \textbf{Web app} shows ``Waking up the server\ldots'' instead of an error while the first
+        request is slow.
+  \item \textbf{No timed jobs on the server.} A sleeping server cannot run something ``every
+        night''. Anything periodic happens \emph{during} requests instead: for example, expired
+        sessions and old login failures are cleaned up whenever someone logs in.
+\end{itemize}
+
+\begin{caution}
+Free tiers change their terms over time (limits, sleep rules, database size, expiry of free
+databases). The specific host is chosen in the deployment section, and the design does not
+depend on any one host: it only needs ``a Python web server'' and ``a PostgreSQL database''.
+\end{caution}
+
+% =====================================================================
+\section{Errors and tests}
+
+\paragraph{One error shape.} Every error response has the same JSON shape, so the laptop and the
+web app handle errors with one piece of code each:
+\begin{lstlisting}
+{ "error": "device_revoked", "message": "This device token was revoked." }
+\end{lstlisting}
+
+\paragraph{Tests.} \texttt{pytest} with FastAPI's test client, which sends fake HTTP requests
+straight to the app with no network. Tests run against a separate local PostgreSQL test
+database, created fresh for each run, so tests can never touch real data. Every endpoint gets
+tests for the happy path, the not-logged-in case (401) and invalid input (422), and the sync
+endpoint gets tests for duplicates, tombstoned uploads and batch limits (Doc~06).
+
+% =====================================================================
+\section{Glossary}
+\begin{description}[style=nextline,leftmargin=1.2cm,itemsep=2pt]
+  \item[Argon2] A modern, deliberately slow password-hashing function.
+  \item[Authentication / authorisation] Who you are / what you may access.
+  \item[CORS] The browser rule controlling which websites may call an API.
+  \item[Endpoint] One method + path an API answers.
+  \item[Environment variable] A setting given to a program by its environment, used for secrets.
+  \item[HTTP method / status code] What kind of request / whether it worked.
+  \item[ORM] Library mapping database tables to Python classes (SQLAlchemy).
+  \item[Pagination] Returning large lists one page at a time.
+  \item[Pydantic model] A typed class that validates request and response data.
+  \item[Salt] Random data mixed into a password hash so identical passwords differ.
+  \item[Session cookie] A random id the browser sends with every request after login.
+\end{description}
+
+% =====================================================================
+\section{Check your understanding}
+\begin{exercise}
+\begin{enumerate}
+  \item Why is there no sign-up endpoint?
+  \item The database leaks. What can the attacker do with \texttt{users} and \texttt{devices}?
+  \item Why is the login lock-out counted in the database instead of in memory?
+  \item What status code should \texttt{GET /analytics/apps} return if you are not logged in?
+  \item Why may the web app change a command's verdict but not its \texttt{heard} text?
+  \item The server is asleep when your laptop syncs. Walk through what happens.
+  \item Why does the server not need an Anthropic API key?
+\end{enumerate}
+\end{exercise}
+
+\end{document}
