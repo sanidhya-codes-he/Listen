@@ -250,6 +250,7 @@ split things later \emph{only} when a real problem appears.
 \node[lbox] (exec)  at (0,-6.4)   {Action executor\\\scriptsize open, search, volume\ldots};
 \node[lbox] (db)    at (3.4,-4.8) {SQLite\\\scriptsize local-first store};
 \node[lbox] (sync)  at (3.4,-6.4) {Sync client};
+\node[lbox] (llm)   at (3.4,0)    {AI command builder\\\scriptsize calls Claude (your key)};
 
 \draw[arr] (mic) -- (voice);
 \draw[arr] (voice) -- (bus);
@@ -261,22 +262,20 @@ split things later \emph{only} when a real problem appears.
 
 \begin{scope}[on background layer]
 \node[draw=local,fill=local!6,rounded corners=6pt,inner sep=10pt,
-      fit=(mic)(voice)(usage)(bus)(intent)(exec)(db)(sync),
+      fit=(mic)(voice)(usage)(bus)(intent)(exec)(db)(sync)(llm),
       label={[text=local!80!black,font=\bfseries]above:Your laptop (one Python process)}] (L) {};
 \end{scope}
 
 % cloud side
 \node[cbox] (api)   at (9.6,-3.2) {FastAPI\\\scriptsize the API};
 \node[cbox] (pg)    at (9.6,-5.0) {PostgreSQL\\\scriptsize synced data};
-\node[cbox] (llm)   at (9.6,-1.4) {Command builder\\\scriptsize calls an LLM};
 \node[cbox] (react) at (9.6,-6.8) {React web app\\\scriptsize in your browser};
 
 \draw[darr] (api) -- (pg);
-\draw[darr] (api) -- (llm);
 \draw[darr] (react.east) -- ++(0.7,0) |- node[pos=0.25,right,font=\scriptsize]{HTTP} (api.east);
 \begin{scope}[on background layer]
 \node[draw=cloud,fill=cloud!6,rounded corners=6pt,inner sep=10pt,
-      fit=(api)(pg)(llm),
+      fit=(api)(pg),
       label={[text=cloud!80!black,font=\bfseries]above:Cloud (deployed)}] (C) {};
 \end{scope}
 
@@ -478,7 +477,7 @@ leaves your machine. If the server were ever breached, the damage is limited by 
 
 \begin{itemize}
   \item \textbf{FastAPI} (Python): the API. It receives sync data, serves analytics,
-        stores the command library, and runs the AI command builder. It generates its own
+        and stores a copy of the command library for the web app. It generates its own
         interactive documentation, so the API is usable by others with no extra work.
   \item \textbf{PostgreSQL}: the cloud database.
   \item \textbf{React}: the web app (dashboard, command manager, settings). It is a separate
@@ -492,9 +491,11 @@ multi-user support later (each person with their own laptop agent) becomes an ex
 not a redesign.
 \end{concept}
 
-\paragraph{Why the command builder lives in the cloud.} The web app's command manager needs
-it, and the LLM's secret API key is safer on one server than copied around. When you are
-offline, the laptop falls back to the guided form, so you are never blocked.
+\paragraph{Where the command builder lives (updated in Section~6).} This first draft put the AI
+command builder in the cloud. It was later moved to the \textbf{laptop}: the API key is your own,
+pasted into the agent's \texttt{.env}, and the free server then needs no paid service at all.
+The web app edits commands with a guided form instead. A good example of an early decision
+revisited once the requirements (here: a free-tier budget) became clearer.
 
 \paragraph{Future-proofing, cheaply.} Every stored record carries a \texttt{user\_id} from
 day one, even though you are the only user. Adding that column now costs one line; adding it
