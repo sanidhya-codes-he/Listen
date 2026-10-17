@@ -1,0 +1,376 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+
+\definecolor{local}{HTML}{2E7D32}
+\definecolor{cloud}{HTML}{1565C0}
+\definecolor{warn}{HTML}{C62828}
+\definecolor{idea}{HTML}{6A1B9A}
+\definecolor{soft}{HTML}{F5F5F5}
+% sequential blue ramp (heatmap)
+\definecolor{h0}{HTML}{EDEDEA}
+\definecolor{h1}{HTML}{86B6EF}
+\definecolor{h2}{HTML}{3987E5}
+\definecolor{h3}{HTML}{256ABF}
+\definecolor{h4}{HTML}{104281}
+
+\newtcolorbox{concept}[1]{colback=idea!4,colframe=idea!70,fonttitle=\bfseries,title={Concept: #1},breakable}
+\newtcolorbox{analogy}{colback=local!5,colframe=local!70,fonttitle=\bfseries,title={Analogy},breakable}
+\newtcolorbox{why}{colback=cloud!4,colframe=cloud!70,fonttitle=\bfseries,title={Why it is done this way},breakable}
+\newtcolorbox{caution}{colback=warn!4,colframe=warn!70,fonttitle=\bfseries,title={Watch out},breakable}
+\newtcolorbox{exercise}{colback=soft,colframe=black!50,fonttitle=\bfseries,title={Check yourself},breakable}
+
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{soft},frame=single,
+        rulecolor=\color{black!25},columns=fullflexible,keepspaces=true,
+        showstringspaces=false,breaklines=true}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Listen -- Learning Doc 08}
+\rhead{\small The Web App}
+\cfoot{\thepage}
+
+\title{\textbf{Listen}\\[4pt]\large Learning Doc 08: The Web App\\
+       \normalsize React, TypeScript, pages, data and charts}
+\author{Detailed design, Section 7 (visual design follows in Figma)}
+\date{17 October 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent This document designs the browser side of Listen: what a React app is, how
+TypeScript keeps it in step with the server, how pages get their data, what each page shows,
+and which chart answers which question, including the calendar heatmap. The \emph{look} of the
+pages (layout, spacing, exact colours on screen) will be designed in Figma and added as a
+separate part once the Figma connection is available; this document fixes everything the look
+must serve.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =====================================================================
+\section{Decisions this section is built on}
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{Topic} & \textbf{Decision} \\
+\midrule
+Language     & \textbf{TypeScript}, with API types generated from the server. \\
+Screens      & Laptop only. Pages are designed for a wide window (1280\,px and up); no phone layout. \\
+Pages        & Login, Overview, History, App usage, Commands, Insights, Devices \& settings. Build order 1$\to$4 first. \\
+Activity calendar & A calendar heatmap on Insights; a square's darkness = number of commands that day. \\
+Visual design & In Figma (pending connection). \\
+From earlier & Talks only to the API (\texttt{/v1/\ldots}); refreshes every 5 minutes; guided form for command edits (Doc~07). \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =====================================================================
+\section{What a React app is}
+
+\begin{concept}{Single-page application (SPA)}
+A traditional website asks the server for a whole new page on every click. A \textbf{single-page
+application} loads \emph{once}: the browser downloads one bundle of JavaScript, which then draws
+every page itself and only asks the server for \emph{data} (JSON from the API). Clicking from
+Overview to History swaps what is on screen instantly, without reloading.
+\end{concept}
+
+\begin{concept}{Component}
+React builds the screen out of \textbf{components}: functions that take some inputs and return
+what to show. A page is a component made of smaller components (a stat tile, a chart, a table
+row), the same way Listen's agent is made of small modules.
+\end{concept}
+
+\begin{lstlisting}[language=Java]
+// web/src/components/StatTile.tsx   (TypeScript + JSX = "TSX")
+type StatTileProps = { label: string; value: number; unit?: string };
+
+export function StatTile({ label, value, unit }: StatTileProps) {
+  return (
+    <div className="stat-tile">
+      <span className="label">{label}</span>
+      <span className="value">{value}{unit}</span>
+    </div>
+  );
+}
+
+// used on the Overview page:
+<StatTile label="Commands today" value={42} />
+\end{lstlisting}
+
+\noindent The HTML-looking part is \textbf{JSX}: a way of writing ``what to show'' inside code.
+\texttt{label}, \texttt{value} and \texttt{unit} are the component's \textbf{props} (its inputs);
+the \texttt{?} on \texttt{unit} means it is optional.
+
+\begin{concept}{State and re-rendering}
+\textbf{State} is data a component remembers and may change, such as which date range is
+selected. When state changes, React runs the component again and updates only the parts of the
+screen that changed. You never edit the page by hand; you change state and React redraws.
+\end{concept}
+
+% =====================================================================
+\section{TypeScript in this app}
+
+TypeScript adds type labels to JavaScript and checks them in the editor; before the browser
+runs anything, the labels are removed. Its biggest job here is keeping the web app and the
+server in agreement.
+
+\begin{concept}{Generated API types}
+FastAPI publishes a machine-readable description of every endpoint at \texttt{/openapi.json}
+(the same data behind \texttt{/docs}). A tool (\texttt{openapi-typescript}) reads it and writes
+\texttt{web/src/api/schema.ts}: a TypeScript type for every request and response. One command
+regenerates it whenever the server changes. If a field is renamed on the server, every place in
+the web app that uses the old name turns red, and the app will not build until it is fixed.
+\end{concept}
+
+\begin{lstlisting}[language=Java]
+// generated from the server; never edited by hand
+type CommandRow = components["schemas"]["CommandRow"];
+//   { uuid: string; ts: string; heard: string; result: "executed" | "failed" | ... }
+
+row.heared      // error: Property 'heared' does not exist. Did you mean 'heard'?
+\end{lstlisting}
+
+\begin{why}
+Pydantic makes the \emph{server} reject bad data; the generated types make the \emph{web app}
+unable to misread good data. The server's Python models become the single source of truth for
+both halves, the same idea as \texttt{shared/recipe.schema.json} for commands (Doc~02).
+\end{why}
+
+% =====================================================================
+\section{Project structure of \texttt{web/}}
+\begin{lstlisting}
+web/
+|-- package.json        <- dependencies + scripts (npm run dev / build / test / gen:api)
+|-- vite.config.ts      <- Vite: the dev server and build tool
+|-- src/
+|   |-- main.tsx         <- entry point: mounts the app into the page
+|   |-- App.tsx          <- routes: which URL shows which page
+|   |-- api/             <- schema.ts (generated) + client.ts (one place that calls fetch)
+|   |-- pages/           <- one file per page: Overview.tsx, History.tsx ...
+|   |-- components/      <- reusable pieces: StatTile, DataTable, DateRangePicker ...
+|   |-- charts/          <- CalendarHeatmap, TrendLine, AppBars ...
+|   `-- styles/          <- colour tokens (light/dark) and base styles
+`-- tests/
+\end{lstlisting}
+
+\begin{concept}{Vite}
+\textbf{Vite} is the tool that runs the app while you develop (\texttt{npm run dev}: saves show up
+in the browser instantly) and builds the final optimised files for deployment
+(\texttt{npm run build}). It handles TypeScript out of the box.
+\end{concept}
+
+% =====================================================================
+\section{Moving between pages, and staying logged in}
+
+\begin{concept}{Client-side routing}
+\textbf{React Router} maps URLs to pages inside the SPA: \texttt{/} is Overview,
+\texttt{/history} is History, and so on. The address bar and the back button work as on any
+website, but no page is fetched from the server.
+\end{concept}
+
+\noindent \textbf{Protected pages.} On start-up the app calls \texttt{GET /v1/auth/me}. If the answer
+is 401 (not logged in), every page redirects to \texttt{/login}. After logging in, the session
+cookie (Doc~07) does the rest; the web app never stores your password or the session id itself.
+
+% =====================================================================
+\section{Getting data: one cache for the whole app}
+
+\begin{concept}{Server-state cache (TanStack Query)}
+Data from the API is stored in one shared \textbf{cache}, managed by a library called
+\textbf{TanStack Query}. A component says ``I need \texttt{/v1/analytics/apps} for this week'';
+the library fetches it once, shares it with every component that asks for the same thing,
+refreshes it every 5 minutes (the decided refresh rate), and refreshes when you come back to the
+tab. Each request is in one of three states, and every page designs all three:
+\textbf{loading}, \textbf{error}, or \textbf{data}.
+\end{concept}
+
+\noindent \textbf{The sleeping server.} If the first request takes longer than 3 seconds, the
+loading state changes to ``Waking up the server\ldots (this can take up to a minute on the free
+tier)'' instead of an endless spinner.
+
+\noindent \textbf{One date range.} A date-range control at the top of each analytics page (today,
+last 7 / 30 / 90 days, custom) drives every chart on that page together.
+
+% =====================================================================
+\section{The pages}
+
+\subsection{1. Login}
+Username, password, ``Log in''. Wrong password: one generic message (``Username or password is
+incorrect'') that never reveals which one was wrong. Lock-out (Doc~07): ``Too many attempts. Try
+again in 15 minutes.''
+
+\subsection{2. Overview, ``today at a glance''}
+\begin{itemize}[nosep]
+  \item A \textbf{KPI row} of stat tiles: commands today, success rate today, top app today,
+        median response time; each with its change versus the previous 7-day average and a
+        small trend line (sparkline).
+  \item The last 10 commands (what was heard, which command, result, time).
+  \item Laptop status: ``Last synced 3 minutes ago'' (from \texttt{GET /v1/devices}).
+\end{itemize}
+
+\subsection{3. History}
+Every command, newest first, 50 per page, with search on the heard text and filters (result,
+mode, command, date range). Each row can be marked \emph{right} / \emph{wrong} or deleted
+(Doc~07), with a confirmation for delete.
+
+\subsection{4. App usage}
+Time per app for the selected range, time per site inside a chosen app (Chrome $\to$ Google Search,
+YouTube \ldots), and how one app's daily time changed over the range.
+
+\subsection{5. Commands}
+Your commands and routines as cards grouped by file (\texttt{core}, \texttt{browser},
+\texttt{routines} \ldots), read from the latest snapshot. ``Add'' and ``Edit'' open the guided form,
+which submits a pending edit; a panel lists pending edits with their status (waiting for laptop /
+applied / invalid / overridden).
+
+\subsection{6. Insights}
+The activity calendar, trends, sentences that did not match, latency, and calibration (charts
+below).
+
+\subsection{7. Devices \& settings}
+Your laptop with its last sync time; create a new device token (shown once, with a copy button
+and a clear warning that it will not be shown again); revoke; log out.
+
+% =====================================================================
+\section{Charts: the right form for each question}
+
+A chart is chosen by the \emph{job} the reader must do, before any colour is picked.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.6cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{4.0cm}}
+\toprule
+\textbf{Question} & \textbf{Form} & \textbf{Colour job} \\
+\midrule
+How active was I each day this year? & Calendar heatmap & Sequential (one hue, darker = more) \\
+Am I using Listen more or less over time? & Line, commands per day & One series: one hue, no legend \\
+Is Listen getting things right more often? & Line, success rate per day & One hue \\
+Today's headline numbers & Stat tiles, not charts & Ink only; delta arrow + label \\
+Which apps take my time? & Horizontal bars, top 7 + ``Other'' & One hue (it is magnitude, not identity) \\
+How did one app's time change? & Line: that app highlighted, others grey & Emphasis: one hue + grey \\
+Where does the 1.5\,s go? & Stacked bars per day, 4 stages, with a 1.5\,s reference line & Categorical, 4 slots, direct-labelled \\
+Are low scores really the wrong guesses? & Two small histograms (right / wrong) with the threshold marked & Two categorical slots \\
+Which sentences failed? & A table (not a chart) & Ink only \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{The activity calendar}
+\begin{center}
+\begin{tikzpicture}[x=0.36cm,y=0.36cm]
+  \foreach \w in {0,...,25} {
+    \foreach \d in {0,...,6} {
+      \pgfmathsetmacro{\v}{mod(\w*13+\d*7+\w*\d*5+3,11)}
+      \ifdim\v pt<2pt \def\c{h0}\else\ifdim\v pt<4pt \def\c{h1}\else\ifdim\v pt<7pt \def\c{h2}\else\ifdim\v pt<9pt \def\c{h3}\else\def\c{h4}\fi\fi\fi\fi
+      \fill[\c,rounded corners=0.6pt] (\w,-\d) rectangle ++(0.82,0.82);
+    }
+  }
+  \node[font=\scriptsize,anchor=east] at (-0.2,0.4) {Mon};
+  \node[font=\scriptsize,anchor=east] at (-0.2,-5.6) {Sun};
+  \node[font=\scriptsize,anchor=east] at (19.6,-7.6) {Less};
+  \foreach \c [count=\i] in {h0,h1,h2,h3,h4} \fill[\c,rounded corners=0.6pt] (19.2+\i,-8) rectangle ++(0.82,0.82);
+  \node[font=\scriptsize,anchor=west] at (25.2,-7.6) {More};
+\end{tikzpicture}
+\\[2pt]{\footnotesize Illustration only (made-up data, 26 weeks shown); the real one shows 53 weeks.}
+\end{center}
+
+\begin{itemize}[nosep]
+  \item One square per day, columns are weeks, rows are weekdays.
+  \item \textbf{Darkness = number of commands that day} (decided). Days with no commands are a
+        light grey square, so ``nothing'' never looks like ``a little''.
+  \item Days with commands fall into \textbf{4 blue steps} using \textbf{quartiles} of your own
+        active days, so one unusually busy day does not make every other day look empty.
+  \item Hovering a square shows the date and the exact count; a ``Less $\to$ More'' key sits
+        underneath. Data comes from a new endpoint, \texttt{GET /v1/analytics/calendar?year=2026},
+        returning one count per day.
+\end{itemize}
+
+\begin{concept}{Sequential vs.\ categorical colour}
+\textbf{Sequential} colour shows \emph{how much}: one hue, light to dark (the calendar, app bars).
+\textbf{Categorical} colour shows \emph{which one}: different hues for different things (the four
+latency stages). Using many hues for ``how much'' makes people read categories that are not
+there, so magnitude always uses one hue.
+\end{concept}
+
+\subsection{Rules every chart follows}
+\begin{itemize}[nosep]
+  \item \textbf{One y-axis per chart.} Two measures with different units get two charts, never a
+        double-axis chart (the most common way charts mislead).
+  \item \textbf{Hover tooltips} on every chart: exact value, date, and label.
+  \item \textbf{Never colour alone}: two or more series always have a legend, and up to four are
+        labelled directly on the chart; every chart can switch to a table view.
+  \item \textbf{Text stays in text colours} (black/grey ink), never in a series colour.
+  \item \textbf{Validated palette}: a tested colour-blind-safe palette, checked with a palette
+        validator for both light and dark mode. Status colours (good / warning / error) are
+        reserved and always come with an icon and a word.
+  \item \textbf{Light and dark mode}, following Windows' setting, each with its own validated steps.
+\end{itemize}
+
+\paragraph{Tools.} \textbf{Recharts} (a React chart library) for lines and bars. The calendar
+heatmap is a small custom component drawn in SVG: 371 squares is simple enough that a library
+would add weight without adding value.
+
+% =====================================================================
+\section{Visual design in Figma (next)}
+Once Figma is connected, each page gets a frame at laptop width (1440\,px), using the colour
+tokens and chart rules above: Login, Overview, History, App usage, Commands, Insights, Devices.
+Those frames become the visual reference for building the pages and are added to this section.
+
+% =====================================================================
+\section{Testing the web app}
+\begin{itemize}[nosep]
+  \item \textbf{Type check} (\texttt{tsc}): the whole app must compile without type errors.
+  \item \textbf{Component tests} with Vitest and React Testing Library: render a component with fake
+        data and check what a user would see (``the calendar shows 371 squares'', ``a 401 sends you
+        to the login page'').
+  \item The API is \textbf{mocked} in these tests, so they run in seconds without a server.
+\end{itemize}
+
+% =====================================================================
+\section{Glossary}
+\begin{description}[style=nextline,leftmargin=1.2cm,itemsep=2pt]
+  \item[Component / props] A function that returns what to show / its inputs.
+  \item[Calendar heatmap] One square per day, darker meaning more.
+  \item[Generated types] TypeScript types produced automatically from the server's API description.
+  \item[JSX / TSX] HTML-like syntax inside JavaScript / TypeScript code.
+  \item[Quartiles] Values splitting sorted data into four equal-sized groups.
+  \item[React Router] Maps URLs to pages inside a single-page app.
+  \item[Sequential / categorical colour] One hue for ``how much'' / different hues for ``which one''.
+  \item[SPA] A web app that loads once and then only fetches data.
+  \item[State] Data a component remembers; changing it redraws the component.
+  \item[TanStack Query] A library that fetches, caches and refreshes API data.
+  \item[Vite] The development server and build tool for the web app.
+\end{description}
+
+% =====================================================================
+\section{Check your understanding}
+\begin{exercise}
+\begin{enumerate}
+  \item What does the browser download once in an SPA, and what does it keep fetching after that?
+  \item A field is renamed on the server. Walk through how the web app finds out.
+  \item Why do days with zero commands get grey, not the lightest blue?
+  \item Why are the calendar's blue steps based on quartiles of \emph{your} days rather than fixed
+        numbers like 0--5, 5--10?
+  \item Why does ``time per app'' use one hue, while ``latency per stage'' uses four?
+  \item You want commands per day and average latency on one chart. What do you do instead?
+\end{enumerate}
+\end{exercise}
+
+\end{document}
