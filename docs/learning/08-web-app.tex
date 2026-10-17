@@ -300,7 +300,7 @@ A chart is chosen by the \emph{job} the reader must do, before any colour is pic
 \toprule
 \textbf{Question} & \textbf{Form} & \textbf{Colour job} \\
 \midrule
-How active was I each day this year? & Calendar heatmap & Sequential (one hue, darker = more) \\
+How active was I each day this year? & Calendar heatmap & Sequential (one hue; darker = more in light mode, brighter = more in dark) \\
 Am I using Listen more or less over time? & Line, commands per day & One series: one hue, no legend \\
 Is Listen getting things right more often? & Line, success rate per day & One hue \\
 Today's headline numbers & Stat tiles, not charts & Ink only; delta arrow + label \\
@@ -334,8 +334,15 @@ Which sentences failed? & A table (not a chart) & Ink only \\
 
 \begin{itemize}[nosep]
   \item One square per day, columns are weeks, rows are weekdays.
-  \item \textbf{Darkness = number of commands that day} (decided). Days with no commands are a
+  \item \textbf{Light mode: darker = more commands that day} (decided). Days with no commands are a
         light grey square, so ``nothing'' never looks like ``a little''.
+  \item \textbf{Dark mode: brighter = more} (decided). On a dark page, ``darker'' would mean
+        ``closer to the background'', so the busiest days would almost vanish. Instead busy days
+        glow: zero is a dark slate square (\texttt{\#2A3440}) and the 4 steps run
+        \texttt{\#1C5CAB} $\to$ \texttt{\#2A78D6} $\to$ \texttt{\#5598E7} $\to$ \texttt{\#9EC5F4},
+        starting one shade lighter than light mode because the darkest blue failed the 2:1
+        contrast check against the dark surface. The rule in both modes: \emph{more activity =
+        stands out more}.
   \item Days with commands fall into \textbf{4 blue steps} using \textbf{quartiles} of your own
         active days, so one unusually busy day does not make every other day look empty.
   \item Hovering a square shows the date and the exact count; a ``Less $\to$ More'' key sits
@@ -388,7 +395,7 @@ Those frames become the visual reference for building the pages and are added to
 \section{Glossary}
 \begin{description}[style=nextline,leftmargin=1.2cm,itemsep=2pt]
   \item[Component / props] A function that returns what to show / its inputs.
-  \item[Calendar heatmap] One square per day, darker meaning more.
+  \item[Calendar heatmap] One square per day; darker means more (brighter in dark mode).
   \item[Generated types] TypeScript types produced automatically from the server's API description.
   \item[JSX / TSX] HTML-like syntax inside JavaScript / TypeScript code.
   \item[Quartiles] Values splitting sorted data into four equal-sized groups.
