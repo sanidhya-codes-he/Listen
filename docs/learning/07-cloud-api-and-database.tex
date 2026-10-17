@@ -208,6 +208,34 @@ recorded by the laptop.
 \end{tabularx}
 \end{center}
 
+\subsection{Endpoints are code you write, not a fixed list}
+Nothing outside Listen decides which endpoints exist. Each endpoint is an ordinary Python
+function in \texttt{server/app/routes/}, labelled with the method and path it answers:
+
+\begin{lstlisting}[language=Python]
+# server/app/routes/analytics.py
+@router.get("/analytics/apps")
+def app_usage(start: date, end: date, user=Depends(current_user)):
+    return analytics_service.app_usage(user.id, start, end)
+\end{lstlisting}
+
+\noindent The \texttt{@router.get(...)} line is a \textbf{decorator} (the same idea as the
+primitive registry in Doc~03): it registers the function as the handler for
+\texttt{GET /analytics/apps}. FastAPI reads the parameter types (\texttt{start: date}) to validate
+the request, and \texttt{Depends(current\_user)} makes FastAPI check the session cookie first and
+hand the function the logged-in user. Adding an endpoint means writing another function;
+renaming or removing one means editing the function. The tables above are the
+\emph{starting} design.
+
+\begin{concept}{API contract and versioning}
+The catch is your \textbf{clients}: the laptop agent and the web app call these exact paths and
+expect these exact shapes. Rename \texttt{/analytics/apps} without updating them and they break.
+So: \textbf{add freely, change carefully}. When other people depend on an API, the standard
+approach is \textbf{versioning}: endpoints live under \texttt{/v1/\ldots}, and a breaking change
+is published as \texttt{/v2/\ldots} \emph{beside} the old one, so existing clients keep working
+until they move over. Listen starts at \texttt{/v1}, so that option is open from day one.
+\end{concept}
+
 % =====================================================================
 \section{The PostgreSQL tables}
 
@@ -248,6 +276,147 @@ is described once as a Python class, and queries can be written in Python. With 
 \textbf{Alembic}, which generates the numbered migration scripts (Doc~05 \S9) by comparing your
 classes to the real database. The laptop keeps plain SQL files: it has five simple tables and
 one user. Using the standard tool where each problem is bigger is a choice, not an inconsistency.
+\end{concept}
+
+% =====================================================================
+\section{The ORM in depth: SQLAlchemy by example}
+
+\subsection{The problem an ORM solves}
+Python thinks in \textbf{objects} (a \texttt{Command} with attributes \texttt{.heard},
+\texttt{.result}); a database thinks in \textbf{tables and rows}. Without an ORM, your code
+constantly translates by hand: build an SQL string, send it, get back tuples like
+\texttt{(12, 'search what is an atom', 'executed', \ldots)}, and remember that position 2 is the
+result. An \textbf{object-relational mapper} does that translation for you.
+
+\begin{analogy}
+An ORM is an interpreter between two people who speak different languages. You speak Python
+(``give me my last 50 executed commands''); the database speaks SQL. The interpreter translates
+your sentence into SQL, and translates the database's answer (rows) back into Python objects.
+You can always ask the interpreter what it actually said, which is how you learn SQL along the way.
+\end{analogy}
+
+\subsection{Step 1: describe a table once, as a class}
+\begin{lstlisting}[language=Python]
+from datetime import datetime
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+class Base(DeclarativeBase):
+    pass
+
+class Command(Base):
+    __tablename__ = "commands"                     # the table this class maps to
+
+    id:      Mapped[int] = mapped_column(primary_key=True)
+    uuid:    Mapped[str] = mapped_column(unique=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    ts:      Mapped[datetime]
+    heard:   Mapped[str]
+    result:  Mapped[str]
+    verdict: Mapped[str | None]                    # "| None": may be empty
+\end{lstlisting}
+
+\noindent Each class is a table, each attribute is a column, and each \emph{object} of the class
+is one row. \texttt{Mapped[str]} says ``a text column that may not be empty'';
+\texttt{ForeignKey("users.id")} says ``this number must be the id of a real user''.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{Database world} & \textbf{Python world (via the ORM)} \\
+\midrule
+Table \texttt{commands} & Class \texttt{Command} \\
+One row & One \texttt{Command(...)} object \\
+Column \texttt{heard} & Attribute \texttt{cmd.heard} \\
+Foreign key to \texttt{users} & A link you can follow: \texttt{cmd.user} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Step 2: read, write, change, delete}
+All work happens inside a \textbf{session}: a conversation with the database that collects your
+changes and saves them together when you \texttt{commit()} (a transaction, Doc~05).
+
+\begin{lstlisting}[language=Python]
+from sqlalchemy import select
+
+with Session(engine) as session:
+    # READ: my last 50 executed commands, newest first
+    stmt = (select(Command)
+            .where(Command.user_id == user.id, Command.result == "executed")
+            .order_by(Command.ts.desc())
+            .limit(50))
+    for cmd in session.scalars(stmt):
+        print(cmd.ts, cmd.heard)
+
+    # CHANGE: mark one wrong. Just set the attribute.
+    cmd = session.scalars(select(Command).where(Command.uuid == some_uuid)).one()
+    cmd.verdict = "wrong"
+
+    # CREATE: a new row is a new object
+    session.add(Command(uuid=new_uuid, user_id=user.id, ts=now,
+                        heard="volume 30", result="executed"))
+
+    # DELETE
+    session.delete(cmd)
+
+    session.commit()        # everything above is saved together, or nothing is
+\end{lstlisting}
+
+\noindent For the READ, SQLAlchemy writes and sends this SQL for you:
+\begin{lstlisting}
+SELECT commands.id, commands.uuid, commands.user_id, commands.ts, ...
+FROM commands
+WHERE commands.user_id = %(user_id)s AND commands.result = %(result)s
+ORDER BY commands.ts DESC
+LIMIT %(limit)s
+\end{lstlisting}
+\noindent Creating the engine with \texttt{echo=True} prints every SQL statement it sends. Turn it
+on while learning: you write Python, read the SQL it produced, and pick up SQL without having to
+learn it first.
+
+\subsection{Step 3: when you need a database-specific feature}
+The sync endpoint needs an \textbf{upsert} (Doc~06): ``insert this row, or update it if the uuid
+already exists''. PostgreSQL has a special command for that, and SQLAlchemy exposes it directly:
+\begin{lstlisting}[language=Python]
+from sqlalchemy.dialects.postgresql import insert
+
+stmt = insert(Command).values(rows)
+stmt = stmt.on_conflict_do_update(
+    index_elements=["uuid"],                       # "same uuid" means "same row"
+    set_={"verdict": stmt.excluded.verdict, "result": stmt.excluded.result},
+)
+session.execute(stmt)
+\end{lstlisting}
+\noindent An ORM does not stop you from using the database's full power; it just makes the common
+cases short.
+
+\subsection{What an ORM gives you, and what it costs}
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{X X}
+\toprule
+\textbf{Gives you} & \textbf{Costs you} \\
+\midrule
+Real Python objects and types; PyCharm autocompletes \texttt{cmd.} and flags typos &
+The SQL is hidden, so you can write slow queries without noticing (use \texttt{echo=True}) \\
+Safety from \textbf{SQL injection} (below) by construction &
+One more library to learn on top of SQL \\
+Alembic can generate migrations by comparing your classes to the database &
+The ``N+1'' trap: looping over 100 commands and touching \texttt{cmd.user} on each can send 101
+queries instead of 1 (SQLAlchemy has options to load them together) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{concept}{SQL injection}
+If code builds SQL by gluing text together, for example
+\texttt{"... WHERE heard = '" + text + "'"}, a value containing a quote can change the meaning of
+the whole statement; an attacker can turn ``search'' into ``delete everything''. The fix is
+\textbf{parameters}: the SQL is sent with placeholders (the \texttt{\%(result)s} above) and the
+values separately, so a value can never be read as SQL. The ORM always uses parameters, which is
+one of the strongest reasons to use one.
 \end{concept}
 
 % =====================================================================

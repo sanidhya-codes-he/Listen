@@ -195,6 +195,26 @@ but it still exists long enough for the sync to report its uuid. Once the other 
 the row is removed for real.
 \end{concept}
 
+\paragraph{How long does each tombstone live?} There are two, and neither runs on a timer:
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{l X X}
+\toprule
+\textbf{Where} & \textbf{What is kept} & \textbf{Removed when} \\
+\midrule
+Laptop (\texttt{deleted\_at}) & The whole row, hidden everywhere &
+As soon as the server confirms the deletion: the next successful sync (usually within 5 minutes,
+or right after reconnecting). Event-based, not time-based. \\
+Server (\texttt{tombstones}) & Only the uuid and the deletion time ($\approx$40 bytes), \emph{no content} &
+Kept indefinitely, so even a laptop offline for months cannot resurrect the row. Ten thousand
+deletions $\approx$ 400\,KB. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\noindent The \emph{content} of a deleted command (what you said, its timings) leaves the server
+the moment the deletion arrives. The server's tombstone remembers only that \emph{something with
+this id} was deleted, never what it was.
+
 \begin{itemize}[nosep]
   \item \textbf{Deleted in the review list:} tombstone locally $\to$ next sync sends the uuid
         $\to$ server deletes its copy $\to$ laptop removes the row.
