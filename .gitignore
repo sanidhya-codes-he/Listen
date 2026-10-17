@@ -27,10 +27,8 @@ dist/
 *.fls
 *.fdb_latexmk
 
-# claude code: personal settings, live activity log and its logger (not part of the project)
-.claude/settings.local.json
-.claude/activity.log
-.claude/hooks/
+# claude code: personal tooling (settings, activity log, agents) - not part of the project
+.claude/
 
 # ide and os clutter
 .idea/

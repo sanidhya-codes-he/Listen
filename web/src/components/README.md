@@ -1,0 +1,3 @@
+# components/  - reusable building blocks (Doc 08)
+
+StatTile, DataTable, DateRangePicker, loading / empty / error / 'waking the server' states ...

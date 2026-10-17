@@ -455,6 +455,28 @@ on every sync. Like passwords, the server keeps only a \textbf{hash} of each tok
 database does not leak working tokens; and revoking a device sets \texttt{revoked\_at}, which
 rejects its token at once.
 
+\paragraph{Session cookie vs.\ device token, side by side.} Both are long random secrets that
+prove identity, and both are stored only as hashes on the server. They differ in \emph{who} uses
+them and \emph{how}:
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{l X X}
+\toprule
+ & \textbf{Session cookie} & \textbf{Device token} \\
+\midrule
+Who holds it & Your \textbf{browser} (the web app) & Your \textbf{laptop agent} (a program) \\
+How you get it & Automatically, by logging in with username + password & Once, by clicking ``create device token'' in the web app and pasting it into \texttt{agent/.env} \\
+How it is sent & The browser attaches it to every request \emph{by itself} (\texttt{Cookie} header) & The agent's code adds it to every sync request (\texttt{Authorization} header) \\
+Lifetime & 30 days, or until you log out & Until you revoke it (no expiry: the agent must keep syncing unattended for months) \\
+What it unlocks & The web app's endpoints (analytics, history, library, devices) & \textbf{Only} \texttt{POST /v1/sync} \\
+If stolen & Someone could use your dashboard until it expires or you log out & Someone could upload fake history; revoke it and create a new one \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\noindent The last two rows are \textbf{least privilege}: each credential can do only the one job
+it exists for. A leaked device token cannot read your analytics, change your password or create
+more tokens.
+
 \begin{concept}{Authentication vs.\ authorisation}
 \textbf{Authentication}: \emph{who} are you? (password, session, device token).
 \textbf{Authorisation}: \emph{what} may you touch? Every query is filtered by the caller's

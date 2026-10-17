@@ -91,6 +91,22 @@ every page itself and only asks the server for \emph{data} (JSON from the API). 
 Overview to History swaps what is on screen instantly, without reloading.
 \end{concept}
 
+\paragraph{An example: opening Listen, then clicking History.}
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{l X X}
+\toprule
+\textbf{Moment} & \textbf{Traditional website} & \textbf{Listen (SPA)} \\
+\midrule
+You open the site & Server sends a full Overview page (HTML) & Server sends one small HTML file + the app's JavaScript bundle (once); the app draws Overview, then fetches \texttt{/v1/analytics/summary} (JSON) \\
+You click ``History'' & Browser throws the page away and downloads a full new History page; the screen flashes white & The app changes the address to \texttt{/history}, swaps the Overview component for the History component, fetches \texttt{/v1/analytics/commands} (JSON). No reload, no flash \\
+You click ``Overview'' again & Another full page download & Overview's data is still in the cache (TanStack Query): it appears instantly \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\noindent Gmail, Google Maps, Figma and Spotify's web player all work this way: after the first
+load, only data travels.
+
 \begin{concept}{Component}
 React builds the screen out of \textbf{components}: functions that take some inputs and return
 what to show. A page is a component made of smaller components (a stat tile, a chart, a table
@@ -114,9 +130,34 @@ export function StatTile({ label, value, unit }: StatTileProps) {
 <StatTile label="Commands today" value={42} />
 \end{lstlisting}
 
-\noindent The HTML-looking part is \textbf{JSX}: a way of writing ``what to show'' inside code.
-\texttt{label}, \texttt{value} and \texttt{unit} are the component's \textbf{props} (its inputs);
-the \texttt{?} on \texttt{unit} means it is optional.
+\noindent \texttt{label}, \texttt{value} and \texttt{unit} are the component's \textbf{props} (its
+inputs); the \texttt{?} on \texttt{unit} means it is optional.
+
+\begin{concept}{JSX, and how TypeScript turns it into TSX}
+\textbf{JSX} lets you write HTML-looking tags \emph{inside} JavaScript. It is not HTML and the
+browser cannot read it: before the app runs, the build tool (Vite) translates every tag into an
+ordinary function call. This line
+\begin{lstlisting}
+<StatTile label="Commands today" value={42} />
+\end{lstlisting}
+becomes, roughly,
+\begin{lstlisting}
+jsx(StatTile, { label: "Commands today", value: 42 })
+\end{lstlisting}
+So a tag is just a neat way to call a component function with its props. Curly braces
+\texttt{\{\ldots\}} mean ``this part is code, not text'': \texttt{value=\{42\}} passes the number 42,
+\texttt{value="42"} would pass the text \texttt{"42"}.
+
+A file of \emph{JavaScript} with JSX is \texttt{.jsx}; a file of \emph{TypeScript} with JSX is
+\textbf{\texttt{.tsx}}. Same tags, but because the props have types, the tags are checked too:
+\begin{lstlisting}
+<StatTile label="Commands today" value="42" />
+// error: Type 'string' is not assignable to type 'number'.
+<StatTile label="Commands today" />
+// error: Property 'value' is missing.                        (value is required)
+\end{lstlisting}
+TSX = JSX's convenient tags + TypeScript's checking of every tag's props.
+\end{concept}
 
 \begin{concept}{State and re-rendering}
 \textbf{State} is data a component remembers and may change, such as which date range is
