@@ -45,8 +45,8 @@
 
 \title{\textbf{Listen}\\[4pt]\large Learning Doc 08: The Web App\\
        \normalsize React, TypeScript, pages, data and charts}
-\author{Detailed design, Section 7 (visual design follows in Figma)}
-\date{17 October 2026}
+\author{Detailed design, Section 7 (including the visual design)}
+\date{17 October 2026, visual design added 18 October 2026}
 
 \begin{document}
 \maketitle
@@ -54,10 +54,10 @@
 \begin{abstract}
 \noindent This document designs the browser side of Listen: what a React app is, how
 TypeScript keeps it in step with the server, how pages get their data, what each page shows,
-and which chart answers which question, including the calendar heatmap. The \emph{look} of the
-pages (layout, spacing, exact colours on screen) will be designed in Figma and added as a
-separate part once the Figma connection is available; this document fixes everything the look
-must serve.
+and which chart answers which question, including the calendar heatmap. The last part records
+the approved \emph{look}: two colour themes, Dock navigation, the React Bits components chosen
+for each page, and the clickable prototypes in \texttt{docs/design/prototypes/} that serve as
+the visual reference when the pages are built.
 \end{abstract}
 
 \tableofcontents
@@ -74,8 +74,8 @@ must serve.
 Language     & \textbf{TypeScript}, with API types generated from the server. \\
 Screens      & Laptop only. Pages are designed for a wide window (1280\,px and up); no phone layout. \\
 Pages        & Login, Overview, History, App usage, Commands, Insights, Devices \& settings. Build order 1$\to$4 first. \\
-Activity calendar & A calendar heatmap on Insights; a square's darkness = number of commands that day. \\
-Visual design & In Figma (pending connection). \\
+Activity calendar & A calendar heatmap on Overview and Insights; darker = more commands (brighter in dark mode). \\
+Visual design & Approved clickable prototypes (\S\ref{sec:visual}): Dock navigation, expressive React Bits components, light and dark themes. \\
 From earlier & Talks only to the API (\texttt{/v1/\ldots}); refreshes every 5 minutes; guided form for command edits (Doc~07). \\
 \bottomrule
 \end{tabularx}
@@ -259,10 +259,13 @@ again in 15 minutes.''
 
 \subsection{2. Overview, ``today at a glance''}
 \begin{itemize}[nosep]
-  \item A \textbf{KPI row} of stat tiles: commands today, success rate today, top app today,
-        median response time; each with its change versus the previous 7-day average and a
-        small trend line (sparkline).
-  \item The last 10 commands (what was heard, which command, result, time).
+  \item The \textbf{``Listen'' title} with a one-line summary (commands today, \% understood), and
+        the \textbf{activity calendar} beside it.
+  \item \textbf{Stat cards}: commands today, success rate today, top app today, median response
+        time, top site, no-match count, streak; each with its change versus the previous 7-day
+        average.
+  \item The last 8 commands (what was heard; hover shows the command, result and response time).
+        Clicking one opens it in History.
   \item Laptop status: ``Last synced 3 minutes ago'' (from \texttt{GET /v1/devices}).
 \end{itemize}
 
@@ -273,7 +276,19 @@ mode, command, date range). Each row can be marked \emph{right} / \emph{wrong} o
 
 \subsection{4. App usage}
 Time per app for the selected range, time per site inside a chosen app (Chrome $\to$ Google Search,
-YouTube \ldots), and how one app's daily time changed over the range.
+YouTube \ldots), and how daily time changed over the range.
+\begin{itemize}[nosep]
+  \item \textbf{Top 7 + ``Other''} as bars: the quick summary. ``Other'' is clickable.
+  \item \textbf{Every app}: a searchable, sortable list of \emph{all} apps (time, share of total,
+        change versus the previous period, days used). Selecting a row is the same as clicking a bar.
+  \item \textbf{Trend}: one app highlighted with the others grey by default, or \textbf{compare up
+        to 4 apps}, each with its own colour \emph{and} marker shape and its name at the end of its
+        line. A 5th pick waits until a colour is free; removing an app never repaints the others.
+        Days an app was not opened are drawn dotted along zero (``0 min, not missing data'').
+  \item The trend chart can be \textbf{zoomed in and out} (drag to select a stretch of days, reset
+        to the full range), so four lines over 90 days stay readable.
+\end{itemize}
+The server already returns every app (Doc~07), so none of this changes the API.
 
 \subsection{5. Commands}
 Your commands and routines as cards grouped by file (\texttt{core}, \texttt{browser},
@@ -287,7 +302,8 @@ below).
 
 \subsection{7. Devices \& settings}
 Your laptop with its last sync time; create a new device token (shown once, with a copy button
-and a clear warning that it will not be shown again); revoke; log out.
+and a clear warning that it will not be shown again); revoke; log out; and the theme choice
+(Windows / Light / Dark), which is remembered in this browser.
 
 % =====================================================================
 \section{Charts: the right form for each question}
@@ -306,6 +322,7 @@ Is Listen getting things right more often? & Line, success rate per day & One hu
 Today's headline numbers & Stat tiles, not charts & Ink only; delta arrow + label \\
 Which apps take my time? & Horizontal bars, top 7 + ``Other'' & One hue (it is magnitude, not identity) \\
 How did one app's time change? & Line: that app highlighted, others grey & Emphasis: one hue + grey \\
+How do a few apps compare? & Line, up to 4 apps, zoomable & Categorical, 4 slots + marker shapes, direct-labelled \\
 Where does the 1.5\,s go? & Stacked bars per day, 4 stages, with a 1.5\,s reference line & Categorical, 4 slots, direct-labelled \\
 Are low scores really the wrong guesses? & Two small histograms (right / wrong) with the threshold marked & Two categorical slots \\
 Which sentences failed? & A table (not a chart) & Ink only \\
@@ -368,7 +385,8 @@ there, so magnitude always uses one hue.
   \item \textbf{Validated palette}: a tested colour-blind-safe palette, checked with a palette
         validator for both light and dark mode. Status colours (good / warning / error) are
         reserved and always come with an icon and a word.
-  \item \textbf{Light and dark mode}, following Windows' setting, each with its own validated steps.
+  \item \textbf{Light and dark mode}, following Windows' setting unless you pick one, each with its
+        own validated steps.
 \end{itemize}
 
 \paragraph{Tools.} \textbf{Recharts} (a React chart library) for lines and bars. The calendar
@@ -376,10 +394,99 @@ heatmap is a small custom component drawn in SVG: 371 squares is simple enough t
 would add weight without adding value.
 
 % =====================================================================
-\section{Visual design in Figma (next)}
-Once Figma is connected, each page gets a frame at laptop width (1440\,px), using the colour
-tokens and chart rules above: Login, Overview, History, App usage, Commands, Insights, Devices.
-Those frames become the visual reference for building the pages and are added to this section.
+\section{Visual design}\label{sec:visual}
+
+\subsection{How the look was chosen}
+\begin{enumerate}[nosep]
+  \item \textbf{Three directions on one screen} (in Figma): A ``Quiet Ledger'' (calm, light),
+        B ``Signal Desk'' (dark instrument panel), C ``Soft Studio'' (warm, rounded). Same Overview,
+        same data, so only the look differed.
+  \item \textbf{Pick and combine}: A becomes light mode, B becomes dark mode (same layout).
+  \item \textbf{Your redesign of Overview} with components you chose from React Bits, built as a
+        clickable prototype, then \textbf{all seven pages} in the same language, with every state.
+\end{enumerate}
+
+\begin{concept}{Prototype: a picture that you can click}
+A \textbf{prototype} is a fake version of the app that looks and behaves like the real one but
+has made-up data and no server. Figma frames are still pictures, which is fine for layout but
+useless for judging animation: a spiral of cards or a menu that flows on hover only makes sense
+when it moves. So the pages were built as small web pages that run the real React Bits code.
+They live in \texttt{docs/design/prototypes/}; open \texttt{index.html}.
+\end{concept}
+
+\subsection{Theme tokens}
+\begin{center}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{l X X}
+\toprule
+ & \textbf{Light (A, Quiet Ledger)} & \textbf{Dark (B, Signal Desk)} \\
+\midrule
+Background / card & \texttt{\#F5F6F8} / \texttt{\#FFFFFF} & \texttt{\#131A22} / \texttt{\#18212B} \\
+Text              & \texttt{\#1D2330}                     & \texttt{\#E6EBF2} \\
+Accent            & \texttt{\#2A78D6}                     & \texttt{\#5598E7} \\
+Fonts             & Instrument Sans                        & IBM Plex Sans; IBM Plex Mono for numbers and command ids \\
+Corners           & 12\,px                                 & 8\,px \\
+\bottomrule
+\end{tabularx}
+\end{center}
+The theme follows Windows by default. The Windows / Light / Dark choice in the header and on
+Devices \& settings overrides it and is \textbf{remembered in this browser}.
+
+\begin{concept}{Design tokens}
+A \textbf{token} is a named design value (\texttt{-{}-accent}, \texttt{-{}-surface},
+\texttt{-{}-radius}) used everywhere instead of a raw colour or number. Components say ``use the
+accent'', never ``use \texttt{\#2A78D6}''. Dark mode is then just a second set of values for the
+same names, and changing the accent later is a one-line edit. This is also why the Dock could be
+recoloured to match the page without touching its code: its colours were pointed at the page's
+tokens.
+\end{concept}
+
+\subsection{Navigation and shared parts}
+\begin{itemize}[nosep]
+  \item \textbf{Dock} (React Bits) at the bottom instead of a sidebar: six pages plus Log out,
+        names on hover, the current page's tile tinted with the accent. No badges. Login has no
+        Dock, because you are not logged in yet.
+  \item \textbf{Header}: the date, ``Last synced \ldots'', and the theme switch.
+  \item \textbf{States on every page}: Loading (page-shaped placeholders), Waking up (the free
+        server is starting; elapsed timer), Error (what failed, ``nothing is lost'', Try again),
+        Empty (first day: example sentences and ``Connect your laptop'').
+  \item \textbf{Hold to confirm}: deleting a command or revoking a device means holding a button
+        down until it fills, instead of an ``Are you sure?'' dialog.
+\end{itemize}
+
+\subsection{Components per page}
+\begin{center}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{Page} & \textbf{Main pieces (React Bits unless noted)} \\
+\midrule
+Login     & TechText ``Listen'', LineWaves background, SpecularButton, Counter for the lock-out countdown \\
+Overview  & TechText ``Listen'' + activity calendar, InfiniteSpiral of stat cards, FlowingMenu of recent commands \\
+History   & SplitFlapText title (a departure board), a real table with every column, GlideSelect filters, HoldButton delete \\
+App usage & Counter total, top-7 bars, OptionWheel to pick an app, ``Every app'' list, compare up to 4 (SpringCheck boxes), zoomable trend \\
+Commands  & Folder per command file, SpotlightCard per command, Stepper guided form, AnimatedList of pending edits \\
+Insights  & MagicBento tiles, BlurText one-line takeaways, every chart with a Table view \\
+Devices   & TearTicket + DecryptedText for the one-time token, HoldButton revoke, JellyRadio theme choice \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{why}
+The interaction should \emph{mean} something. The device token is shown once, so it appears as a
+ticket: the characters unscramble, and you tear off the stub to confirm you saved it, just as you
+would keep a real ticket stub. History is a log of events, so its title flips like a departure
+board. Deleting is permanent, so it needs a deliberate hold rather than a quick click. Dense data
+(History, the every-app list) stays a plain table, because decoration must never make numbers
+harder to read.
+\end{why}
+
+\begin{caution}
+These pages animate continuously (TechText, the spiral). That uses some CPU while the web app is
+open, which is acceptable because ``lightweight'' is a rule for the \emph{laptop agent}, and the
+dashboard is only open when you choose to look at it. Every animation still stops when Windows
+asks for reduced motion.
+\end{caution}
 
 % =====================================================================
 \section{Testing the web app}
@@ -394,10 +501,13 @@ Those frames become the visual reference for building the pages and are added to
 % =====================================================================
 \section{Glossary}
 \begin{description}[style=nextline,leftmargin=1.2cm,itemsep=2pt]
-  \item[Component / props] A function that returns what to show / its inputs.
   \item[Calendar heatmap] One square per day; darker means more (brighter in dark mode).
+  \item[Component / props] A function that returns what to show / its inputs.
+  \item[Design token] A named design value (colour, size) used instead of raw values.
+  \item[Dock] A row of app-style icons for moving between pages.
   \item[Generated types] TypeScript types produced automatically from the server's API description.
   \item[JSX / TSX] HTML-like syntax inside JavaScript / TypeScript code.
+  \item[Prototype] A clickable fake of the app with made-up data, used to judge the design.
   \item[Quartiles] Values splitting sorted data into four equal-sized groups.
   \item[React Router] Maps URLs to pages inside a single-page app.
   \item[Sequential / categorical colour] One hue for ``how much'' / different hues for ``which one''.
@@ -418,6 +528,8 @@ Those frames become the visual reference for building the pages and are added to
         numbers like 0--5, 5--10?
   \item Why does ``time per app'' use one hue, while ``latency per stage'' uses four?
   \item You want commands per day and average latency on one chart. What do you do instead?
+  \item You decide the accent should be green. Which files change, and why so few?
+  \item Why can compare mode show at most 4 apps, and why does each app also get a marker shape?
 \end{enumerate}
 \end{exercise}
 

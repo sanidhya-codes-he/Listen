@@ -1,0 +1,11 @@
+/* index */
+.gallery { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.g-card { overflow: hidden; }
+.g-card:first-child { grid-column: span 1; }
+.g-link { display: flex; flex-direction: column; gap: 6px; padding: 0 0 18px; color: inherit; text-decoration: none; }
+.g-link:hover .g-shot img { transform: scale(1.02); }
+.g-link:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: var(--radius); }
+.g-shot { display: block; aspect-ratio: 1440 / 900; overflow: hidden; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.g-shot img { width: 100%; display: block; transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.g-name { padding: 10px 20px 0; font-family: var(--title); font-size: 20px; font-weight: 600; letter-spacing: var(--title-track); }
+.g-what { padding: 0 20px; color: var(--ink-2); font-size: 14px; }

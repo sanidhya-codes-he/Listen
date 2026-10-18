@@ -1,0 +1,52 @@
+/* hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px; align-items: center; margin-top: 12px; }
+.tech-wrap { height: 280px; color: var(--ink); font-family: var(--font); }
+.tech-caption { margin: -36px 0 0; color: var(--ink-2); text-align: center; font-size: 13px; }
+
+/* lower row */
+.lower { display: grid; grid-template-columns: 520px minmax(0, 1fr); gap: 24px; margin-top: 24px; }
+.spiral-card { display: flex; flex-direction: column; }
+.spiral-box { flex: 1; height: 462px; position: relative; margin-top: 10px; }
+.infinite-spiral__item { border: 1px solid var(--border) !important; background: var(--surface) !important; box-shadow: 0 10px 30px -14px rgb(10 20 40 / 0.35) !important; }
+.stat { position: absolute; inset: 0; padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; color: var(--ink); text-align: left; }
+.stat-label { font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+.stat-value { font-family: var(--font-num); font-size: 24px; font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat-value small { font-size: 13px; font-weight: 500; color: var(--ink-2); margin-left: 4px; letter-spacing: 0; }
+.stat-delta { font-size: 12px; color: var(--ink-2); display: flex; gap: 6px; align-items: center; white-space: nowrap; overflow: hidden; }
+.stat-delta span:last-child { overflow: hidden; text-overflow: ellipsis; }
+.stat-delta .arrow { color: var(--ink); font-size: 10px; }
+.spiral-hint { padding: 0 24px 16px; color: var(--ink-3); font-size: 12px; }
+
+.recent-card { display: flex; flex-direction: column; overflow: hidden; }
+.recent-box { height: 472px; margin-top: 12px; border-top: 1px solid var(--border); }
+.flowing-menu__label { font-size: clamp(16px, 36cqh, 26px) !important; }
+.rc-meta { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+.rc-meta .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.rc-meta .status { display: inline-flex; align-items: center; gap: 5px; color: var(--ink); }
+.rc-meta .status.good svg { color: var(--good); }
+.rc-meta .status.warn svg { color: var(--warn); }
+.rc-meta .status.bad svg { color: var(--bad); }
+.mq { display: inline-flex; align-items: center; gap: 14px; padding-right: 28px; font-size: 20px; font-weight: 500; white-space: nowrap; }
+.mq code { font-family: var(--font-num); font-size: 18px; }
+.mq .st { display: inline-flex; align-items: center; gap: 6px; }
+.mq .sep { opacity: 0.55; }
+
+
+/* ---- Overview states (phase 2) ---- */
+.hero > .state-panel { width: 888px; min-height: 250px; padding: 28px 32px; gap: 28px; }
+.hero > .state-panel .waking-radar { height: 230px; }
+.hero > .state-panel .error-art { min-height: 150px; }
+.hero > .state-panel .state-title { font-size: 22px; margin-top: 12px; }
+.hero > .state-panel .state-copy p { font-size: 14px; }
+.cal-card.is-loading .cal-svg rect.day { animation: calpulse 1.6s ease-in-out infinite; }
+@keyframes calpulse { 50% { opacity: 0.45; } }
+.spiral-skel { position: relative; height: 462px; margin-top: 10px; display: flex; flex-direction: column; gap: 26px; padding-top: 30px; }
+.skel-stat { width: 200px; height: 104px; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius); display: flex; flex-direction: column; justify-content: space-between; background: var(--surface); }
+.recent-skel { display: flex; flex-direction: column; }
+.skel-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; height: 59px; padding: 0 30px 0 64px; border-bottom: 1px solid var(--grid); }
+.lower-full { margin-top: 24px; }
+.empty-ghost { position: relative; height: 300px; }
+.ghost-stat { position: absolute; left: 40px; top: 10px; width: 220px; height: 112px; padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; border: 1px dashed var(--axis); border-radius: var(--radius); background: var(--surface); color: var(--ink-3); }
+.ghost-stat .stat-value { color: var(--ink-3); }
+.ghost-stat .stat-delta { color: var(--ink-3); }
+@media (prefers-reduced-motion: reduce) { .cal-card.is-loading .cal-svg rect.day { animation: none; } }
