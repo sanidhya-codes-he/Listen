@@ -18,6 +18,11 @@ dist/
 *.db
 *.sqlite3
 *.log
+*.log.*
+agent/logs/
+
+# your own voice: speech test clips stay on this laptop only (Doc 09)
+agent/tests/audio/clips/
 
 # latex build leftovers (keep only .tex and .pdf)
 *.aux

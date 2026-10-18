@@ -285,6 +285,12 @@ speak each test command live; the clip is held in memory, transcribed by \texttt
 \emph{and} \texttt{base.en} one after the other (so both models get identical audio, a fair
 comparison), the two results and timings are stored as text, and the clip is discarded. The
 cost: you speak the test set once per benchmark run instead of reusing recordings.
+
+\textbf{Update (Doc~09):} you chose to record about 20 \emph{test clips} of your own voice for
+the speech tests. They are the one deliberate exception: made only with the developer command
+\texttt{listen record-tests}, kept in the git-ignored folder \texttt{agent/tests/audio/clips/},
+never synced. The running assistant still never writes audio, and the benchmark can now reuse
+these clips.
 \end{caution}
 
 % =====================================================================
