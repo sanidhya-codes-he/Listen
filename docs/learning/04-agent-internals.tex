@@ -368,6 +368,27 @@ that module carries on with the next message. A \textbf{supervisor} checks every
 each thread is alive and restarts any that died. One bad command must never take the whole
 assistant down.
 
+\paragraph{How the supervisor ``restarts'' a thread.} A Python thread that has ended can never be
+started again. So the supervisor starts a \emph{new} thread that runs the same worker object
+with the same inbox queue. The queue belongs to the worker, not the thread, so messages that
+arrived meanwhile are not lost; only the one being handled at the moment of the crash is (and it is
+logged). Two limits stop this from going wrong:
+\begin{itemize}[nosep]
+  \item \textbf{Crash loops}: at most 3 restarts per thread per minute. A thread that dies every
+        time it starts (say, a corrupt model file) is not fixed by restarting it forever.
+  \item \textbf{Hung threads}: a thread stuck forever on a frozen call is still ``alive'', so
+        checking \texttt{is\_alive()} cannot see it. Each worker therefore records a
+        \textbf{heartbeat} (a timestamp) on every loop pass; a worker silent for 30\,s is hung.
+\end{itemize}
+In both cases the supervisor exits the whole agent with an error code, because Python cannot
+safely kill a single thread. The \textbf{launcher} (Doc~09) then restarts the process cleanly.
+
+\begin{concept}{Heartbeat}
+A \textbf{heartbeat} is a small ``I'm still working'' signal sent regularly. Silence means
+trouble. Hospitals monitor real heartbeats the same way: the monitor does not need to know
+\emph{why} the beat stopped to know it must call for help.
+\end{concept}
+
 \begin{concept}{Graceful degradation}
 When part of a system fails, the rest keeps working with reduced ability instead of crashing.
 No internet: commands still work, the command builder falls back to the form. No microphone:
@@ -400,6 +421,7 @@ Listen waits. Unknown app: ``CLion not found'', the rest of the routine still ru
   \item[Queue] A thread-safe waiting line for passing messages between threads.
   \item[State machine] Something that is always in one state and changes state only on events.
   \item[Supervisor] A watcher that restarts parts of a program that died.
+  \item[Heartbeat] A regular ``still working'' signal; silence means a part is stuck.
   \item[Thread] One line of work inside a program.
 \end{description}
 

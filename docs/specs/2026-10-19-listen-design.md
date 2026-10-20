@@ -224,8 +224,23 @@ Chrome profiles (only the profile flag, never arbitrary arguments).
 | Sync | §6 |
 
 Every worker loop runs inside an error handler: an error is logged, published as `ModuleError`, and
-the loop continues. A **supervisor** checks every few seconds that each thread is alive and
-restarts dead ones.
+the loop continues. Behind that, a **supervisor** thread checks every 5 s:
+
+- **Dead thread** (`is_alive()` is false): a Python thread cannot be restarted, so the supervisor
+  starts a **new thread running the same worker object with the same inbox queue**. Queued
+  messages are kept; only the message being handled when it died is lost (and logged).
+- **Restart limit:** at most **3 restarts per thread per minute**. Beyond that (a crash loop), the
+  supervisor exits the agent with an error code and the launcher takes over (§9.1).
+- **Hung thread (heartbeat):** every worker records a heartbeat timestamp on each loop pass;
+  loops wait on their queue with a 1 s timeout, so an idle worker still beats every second. A
+  worker silent for **30 s** is treated as hung. Python cannot safely kill a thread, so the
+  supervisor exits the agent with an error code and the launcher restarts the process.
+- Exception: the transcriber may legitimately run for a few seconds per recording; its heartbeat
+  is also updated before and after each transcription, and 30 s is well above its worst case.
+
+Escalation chain: thread error -> caught in the loop; thread dies -> new thread (max 3/min);
+thread hangs or crash-loops -> process exits; process exits -> launcher restarts it (max 3 in
+10 min, then stops with a pop-up).
 
 ### 4.2 Listener state machine
 
@@ -495,7 +510,8 @@ Rules: contain, tell briefly, recover on its own.
 | No match / low confidence | chime (not in continuous mode); saved; thresholds decide |
 | Action fails or raises | pop-up "Couldn't open X"; `failed` with reason; undo slot untouched; traceback to log |
 | Bad command file | skip invalid entries; keep last good file if unparseable; pop-up with file:line |
-| Thread dies | supervisor restarts it |
+| Thread dies | supervisor starts a replacement (max 3 per minute, §4.1) |
+| Thread hangs (no heartbeat for 30 s) or crash-loops | agent exits with an error code; the launcher restarts it |
 | **Agent crashes** | a separate **launcher** process restarts it, **at most 3 times in 10 minutes**, pop-up each time; then stops with "Listen stopped, see the log" |
 | Database busy / disk full | 5 s busy timeout / keep running commands, warn that saving paused |
 | Database damaged | integrity check at start; rename the file (kept) and start fresh; pop-up |
