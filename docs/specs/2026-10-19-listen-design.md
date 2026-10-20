@@ -193,8 +193,11 @@ Chrome profiles (only the profile flag, never arbitrary arguments).
 
 ### 3.10 Command builder
 
-- **AI builder on the laptop:** uses `ANTHROPIC_API_KEY` that the owner pastes into `agent/.env`
-  (never requested, never committed). It receives the request, current files, schema and primitive
+- **AI builder on the laptop, using Google Gemini** (the `google-genai` Python SDK). It reads
+  `GEMINI_API_KEY` from `agent/.env`, which the owner adds when it is first needed (never
+  committed). The model name is a setting (`ai_builder.model` in `agent/settings.yaml`), chosen at
+  build time, so it can change without code changes. The builder talks to Gemini through the
+  `CommandBuilder` interface, so swapping providers later only means adding one implementation. It receives the request, current files, schema and primitive
   list, and returns a **proposed change** (not a rewritten file). The proposal is schema-checked and
   tried on example sentences; the owner sees a diff and approves. Nothing is saved before "yes".
   No key -> builder disabled with a message; API error -> nothing written.

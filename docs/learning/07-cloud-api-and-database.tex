@@ -497,7 +497,7 @@ WEB_APP_ORIGIN=https://...
 # agent/.env   (never committed)
 LISTEN_SERVER_URL=https://...
 LISTEN_DEVICE_TOKEN=...
-ANTHROPIC_API_KEY=...        # you paste this yourself; the AI builder reads it here
+GEMINI_API_KEY=...           # you paste this yourself; the AI builder (Google Gemini) reads it
 \end{lstlisting}
 \noindent The server needs no AI key at all, because the AI builder runs on the laptop.
 
@@ -570,7 +570,7 @@ endpoint gets tests for duplicates, tombstoned uploads and batch limits (Doc~06)
   \item What status code should \texttt{GET /analytics/apps} return if you are not logged in?
   \item Why may the web app change a command's verdict but not its \texttt{heard} text?
   \item The server is asleep when your laptop syncs. Walk through what happens.
-  \item Why does the server not need an Anthropic API key?
+  \item Why does the server not need a Gemini API key?
 \end{enumerate}
 \end{exercise}
 
