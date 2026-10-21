@@ -1,0 +1,17 @@
+# continuous integration: lint and test on a fresh machine for every push and pull request
+name: CI
+on: [push, pull_request]
+
+jobs:
+  agent:
+    runs-on: windows-latest          # the agent uses Windows-only libraries
+    steps:
+      - uses: actions/checkout@v4    # copy the repo onto the runner
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip                 # reuse downloaded libraries between runs
+          cache-dependency-path: agent/pyproject.toml
+      - run: pip install -e "agent[dev]"
+      - run: ruff check agent
+      - run: pytest agent            # speech tests (stage 2) skip: no clips on GitHub
