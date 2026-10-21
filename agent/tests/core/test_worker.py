@@ -5,7 +5,7 @@ import threading
 import pytest
 
 from listen_agent.core.bus import EventBus
-from listen_agent.core.events import ModuleError
+from listen_agent.core.events import Event, ModuleError
 from listen_agent.core.worker import Worker
 
 
@@ -36,6 +36,20 @@ class Dier(Recorder):
 
     def handle(self, message):
         raise Fatal()
+
+
+class Fragile(Worker):
+    """Hears every event, error reports included, and fails on all of them (e.g. stdout closed)."""
+
+    name = "fragile"
+    wait_seconds = 0.01
+
+    def __init__(self, bus, **kwargs):
+        super().__init__(bus, **kwargs)
+        bus.subscribe(Event, self.inbox)
+
+    def handle(self, message):
+        raise OSError("stdout closed")
 
 
 @pytest.fixture
@@ -122,3 +136,20 @@ def test_a_crash_escapes_the_loop_and_is_logged(bus, caplog):
     with pytest.raises(Fatal):
         worker.run(threading.Event())
     assert "dier died" in caplog.text
+
+
+def test_a_crash_is_logged_with_its_traceback(bus, caplog):
+    worker = Dier(bus)
+    worker.inbox.put("x")
+    with pytest.raises(Fatal):
+        worker.run(threading.Event())
+    assert caplog.records[-1].exc_info is not None
+
+
+def test_failing_on_an_error_report_does_not_report_again(bus, errors):
+    worker = Fragile(bus)
+    bus.publish(Event())
+    for _ in range(3):
+        worker.run_once()
+    assert errors.qsize() == 1
+    assert worker.inbox.empty()

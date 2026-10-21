@@ -48,12 +48,16 @@ class Worker:
                 self.handle(message)
         except Exception as exc:
             log.exception("%s failed handling %s", self.name, type(message).__name__)
-            self.bus.publish(ModuleError(self.name, f"{type(exc).__name__}: {exc}"))
+            # failing on an error report must not publish another one: that would loop forever
+            if not isinstance(message, ModuleError):
+                self.bus.publish(ModuleError(self.name, f"{type(exc).__name__}: {exc}"))
 
     def run(self, stop: threading.Event) -> None:
         while not stop.is_set():
             try:
                 self.run_once()
             except BaseException:
-                log.critical("%s died; the message it was handling is lost", self.name)
+                log.critical(
+                    "%s died; the message it was handling is lost", self.name, exc_info=True
+                )
                 raise
