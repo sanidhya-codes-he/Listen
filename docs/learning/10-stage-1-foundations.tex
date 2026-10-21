@@ -235,6 +235,12 @@ The code refuses \texttt{bool} explicitly, and a test pins it.
 start. Reading with \texttt{encoding="utf-8-sig"} removes it if present. One word in the code,
 one test, one confusing evening avoided.
 
+\paragraph{Other encodings (found by the review).} Notepad can also save as ``Unicode''
+(UTF-16) or ANSI (Windows-1252). Those bytes are not valid UTF-8, so reading them raised a raw
+\texttt{UnicodeDecodeError}: a traceback, exit code 1, nothing in the log, and the launcher would
+have restarted an agent that can never start. Now any read failure becomes
+\texttt{settings.yaml: can't read it (\ldots); save it as UTF-8} with exit code 2.
+
 % =====================================================================
 \section{Frozen dataclasses}
 \begin{lstlisting}[language=Python]
@@ -338,6 +344,16 @@ Also: never put words you heard into an exception message. Tracebacks go to the 
 log must stay free of spoken words.
 \end{caution}
 
+\begin{caution}
+\textbf{The error storm (found by the review).} The terminal shell listens to \emph{every}
+event, including \texttt{ModuleError}. If printing ever fails (the console closed), the shell
+fails on an event, publishes a \texttt{ModuleError}, receives it, fails to print \emph{that},
+publishes another\ldots{} The reviewer measured about 100{,}000 error reports in one second,
+enough to rotate away the whole log. The fix is one condition: failing while handling a
+\texttt{ModuleError} is logged but does not publish a new one. Lesson: any part that both
+\emph{reports} errors and \emph{listens to} error reports needs a brake.
+\end{caution}
+
 \paragraph{Daemon threads.} Worker threads are started with \texttt{daemon=True}: when the main
 program ends, they end with it. A thread that is truly stuck cannot block Listen from exiting.
 
@@ -404,6 +420,14 @@ elif now - worker.last_beat > HUNG_AFTER:              # alive but silent for 30
   \item \textbf{Hung}: Python cannot safely kill a thread, so the only cure is restarting the
         whole agent: \texttt{on\_fatal} sets exit code 3 and the launcher takes over.
 \end{itemize}
+
+\paragraph{Sleep is not a hang (found by the review).} On Windows, \texttt{time.monotonic} keeps
+counting while the laptop sleeps. Close the lid for an hour, open it, and the first check could
+see every heartbeat as an hour old: ``stopped responding'', agent stopped. But the supervisor
+itself checks every 5 seconds, so if more than 30 seconds passed \emph{between two of its own
+checks}, the whole laptop must have been asleep. In that case it logs ``clock jumped'' and
+refreshes every heartbeat instead of blaming the workers. A worker that is really stuck is still
+caught 30 seconds later.
 
 % =====================================================================
 \section{Dependency injection and fakes}
