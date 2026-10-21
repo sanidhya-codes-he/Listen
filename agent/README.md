@@ -20,4 +20,5 @@ reinstalling. In PyCharm, choose `agent/.venv/Scripts/python.exe` as the project
 ```
 agent/.venv/Scripts/python -m pytest agent    # run the tests
 agent/.venv/Scripts/ruff check agent          # lint: likely mistakes and import order
+agent/.venv/Scripts/listen run                # start the agent (Ctrl+C stops it)
 ```

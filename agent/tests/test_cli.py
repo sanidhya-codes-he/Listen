@@ -28,3 +28,13 @@ def test_package_runs_with_python_dash_m():
     )
     assert result.returncode == 0
     assert result.stdout.startswith("listen ")
+
+
+def test_run_subcommand_starts_the_agent(monkeypatch):
+    monkeypatch.setattr("listen_agent.__main__.run_agent", lambda: 7)
+    assert main(["run"]) == 7
+
+
+def test_help_lists_run(capsys):
+    main([])
+    assert "run" in capsys.readouterr().out
