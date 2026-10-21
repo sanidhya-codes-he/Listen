@@ -33,13 +33,23 @@ class Supervisor:
         self.clock = clock
         self.threads: dict[str, threading.Thread] = {}
         self._restarts: dict[str, deque[float]] = {name: deque() for name in names}
+        self._last_check = clock()
 
     def start(self) -> None:
+        self._last_check = self.clock()
         for worker in self.workers:
             self._start_thread(worker)
 
     def check(self) -> None:
         now = self.clock()
+        gap = now - self._last_check
+        self._last_check = now
+        if gap > HUNG_AFTER:
+            # checks run every 5 s, so a gap this long means the whole laptop slept:
+            # nobody beat because nothing ran, not because a worker hung
+            log.warning("clock jumped %.0f s (sleep?); heartbeats reset", gap)
+            for worker in self.workers:
+                worker.beat()
         for worker in self.workers:
             if not self.threads[worker.name].is_alive():
                 if not self._may_restart(worker.name, now):

@@ -4,7 +4,7 @@ import threading
 import pytest
 
 from listen_agent.core.bus import EventBus
-from listen_agent.core.supervisor import Supervisor
+from listen_agent.core.supervisor import CHECK_EVERY, Supervisor
 from listen_agent.core.worker import Worker
 
 
@@ -63,6 +63,13 @@ def let_thread_end(supervisor, name):
     supervisor.threads[name].join(timeout=1)
 
 
+def run_checks_for(supervisor, clock, seconds):
+    # what really happens while the laptop is awake: a check every 5 s
+    for _ in range(int(seconds // CHECK_EVERY)):
+        clock.advance(CHECK_EVERY)
+        supervisor.check()
+
+
 def test_each_worker_runs_in_its_own_named_thread(bus, stop, clock):
     supervisor, _ = supervise(Sleeper(bus, clock=clock), stop, clock)
     thread = supervisor.threads["sleeper"]
@@ -113,16 +120,33 @@ def test_deaths_spread_over_minutes_are_not_fatal(bus, stop, clock):
 
 def test_silent_for_more_than_30_seconds_is_hung(bus, stop, clock):
     supervisor, fatal = supervise(Stuck(bus, clock=clock), stop, clock)
-    clock.advance(31)
+    run_checks_for(supervisor, clock, 30)
+    clock.advance(1)
     supervisor.check()
     assert fatal == ["stuck stopped responding"]
 
 
 def test_silent_for_29_seconds_is_fine(bus, stop, clock):
     supervisor, fatal = supervise(Stuck(bus, clock=clock), stop, clock)
-    clock.advance(29)
+    run_checks_for(supervisor, clock, 25)
+    clock.advance(4)
     supervisor.check()
     assert fatal == []
+
+
+def test_waking_from_sleep_is_not_a_hang(bus, stop, clock):
+    supervisor, fatal = supervise(Stuck(bus, clock=clock), stop, clock)
+    clock.advance(3600)  # lid closed for an hour: no checks ran
+    supervisor.check()
+    assert fatal == []
+
+
+def test_a_real_hang_after_waking_is_still_caught(bus, stop, clock):
+    supervisor, fatal = supervise(Stuck(bus, clock=clock), stop, clock)
+    clock.advance(3600)
+    supervisor.check()
+    run_checks_for(supervisor, clock, 35)
+    assert fatal == ["stuck stopped responding"]
 
 
 def test_duplicate_worker_names_are_refused(bus, stop, clock):
