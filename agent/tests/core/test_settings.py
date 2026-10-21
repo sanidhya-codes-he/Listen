@@ -90,3 +90,17 @@ def test_top_level_list_is_rejected(tmp_path):
 def test_settings_cannot_be_changed_after_loading():
     with pytest.raises(FrozenInstanceError):
         Settings().mode = "continuous"
+
+
+@pytest.mark.parametrize("encoding", ["cp1252", "utf-16"])
+def test_file_in_another_encoding_stops_with_a_clear_message(tmp_path, encoding):
+    path = write(tmp_path, "# café\nmode: wake\n", encoding=encoding)
+    with pytest.raises(SettingsError, match="save it as UTF-8") as error:
+        load_settings(path)
+    assert str(error.value).startswith("settings.yaml: can't read it")
+
+
+def test_unreadable_path_stops_with_a_clear_message(tmp_path):
+    (tmp_path / "settings.yaml").mkdir()
+    with pytest.raises(SettingsError, match="can't read it"):
+        load_settings(tmp_path / "settings.yaml")

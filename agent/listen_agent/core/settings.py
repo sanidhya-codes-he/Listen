@@ -43,7 +43,11 @@ def load_settings(path: Path) -> Settings:
         return Settings()
     try:
         # utf-8-sig also accepts files saved with a byte-order mark (Notepad does this)
-        raw = yaml.safe_load(path.read_text(encoding="utf-8-sig"))
+        text = path.read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise SettingsError(f"{path.name}: can't read it ({exc}); save it as UTF-8") from exc
+    try:
+        raw = yaml.safe_load(text)
     except yaml.YAMLError as exc:
         raise SettingsError(f"{path.name}: not valid YAML ({exc})") from exc
     raw = raw or {}
