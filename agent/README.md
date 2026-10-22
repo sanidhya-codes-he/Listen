@@ -22,3 +22,5 @@ agent/.venv/Scripts/python -m pytest agent    # run the tests
 agent/.venv/Scripts/ruff check agent          # lint: likely mistakes and import order
 agent/.venv/Scripts/listen run                # start the agent (Ctrl+C stops it)
 ```
+
+All project commands (tests, lint, git, tools): [../docs/cheatsheet.md](../docs/cheatsheet.md).
