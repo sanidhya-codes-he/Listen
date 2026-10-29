@@ -40,12 +40,13 @@ for the M issues.
 
 ## Creating the issues from the terminal (you run these)
 
+Labels and milestones are created once (done on 2026-10-29). Then each issue, in PowerShell:
+
 ```
-gh label create stage-2 --color 1565C0 --description "Stage 2: voice agent"
-gh api repos/sanidhya-codes-he/Listen/milestones -f title="Stage 2: voice agent in the terminal"
-gh issue create --title "[S2-01] Command files and the recipe schema" --body-file docs/issues/s2-01-command-files.md --label stage-2,agent --milestone "Stage 2: voice agent in the terminal"
+gh issue create --title "[S2-01] Command files and the recipe schema" --body-file docs/issues/s2-01-command-files.md --label stage-2 --label agent --milestone "Stage 2: voice agent in the terminal" --parent <S2 issue number> --blocked-by <M2 issue number>
 ```
 
-Sub-issues and "blocked by" links are set through GitHub's API (`gh api ...`); we will look up the
-exact commands together the first time. After creating an issue, write its GitHub number into the
-table in `docs/roadmap.md`.
+`--parent` makes it a sub-issue of its stage issue; `--blocked-by` adds the "Depends on" links (so
+create issues in dependency order, or add links later with `gh issue edit N --add-blocked-by M`).
+After creating an issue, write its GitHub number into the table in `docs/roadmap.md`. All commands:
+[`../gh-cheatsheet.md`](../gh-cheatsheet.md).

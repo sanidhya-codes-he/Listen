@@ -83,3 +83,5 @@ CI runs the same `ruff check agent` and `pytest agent` on every push.
 | `uvicorn app.main:app --reload` | 4 | start the server |
 | `python -m app.cli create-user` | 4 | create your web login |
 | `npm ci` / `npm run check` | 5 | install / check the web app |
+
+GitHub CLI commands (issues, PRs, CI, labels, `gh api`, PowerShell traps): [gh-cheatsheet.md](gh-cheatsheet.md).
