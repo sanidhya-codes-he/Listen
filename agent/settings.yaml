@@ -1,0 +1,15 @@
+# listen agent settings (non-secret). secrets go in agent/.env, never here.
+# changes take effect on the next start.
+
+mode: wake                       # wake | continuous (push-to-talk works in both)
+
+hotkeys:
+  push_to_talk: ctrl+alt+space   # hold to talk
+  continuous_toggle: ctrl+alt+c
+
+thresholds:                      # placeholders until calibrated (spec §3.6)
+  hearing: 0.60
+  match: 0.75
+  high_risk_hearing: 0.75
+  high_risk_match: 0.90
+  continuous_extra: 0.10         # added to each threshold in continuous mode

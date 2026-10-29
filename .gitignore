@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
+*.egg-info/
 
 # javascript: downloaded libraries and build output (rebuilt from package.json)
 node_modules/

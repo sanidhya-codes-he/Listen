@@ -1,0 +1,581 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+
+\definecolor{local}{HTML}{2E7D32}
+\definecolor{cloud}{HTML}{1565C0}
+\definecolor{warn}{HTML}{C62828}
+\definecolor{idea}{HTML}{6A1B9A}
+\definecolor{soft}{HTML}{F5F5F5}
+
+\newtcolorbox{concept}[1]{colback=idea!4,colframe=idea!70,fonttitle=\bfseries,title={Concept: #1},breakable}
+\newtcolorbox{analogy}{colback=local!5,colframe=local!70,fonttitle=\bfseries,title={Analogy},breakable}
+\newtcolorbox{why}{colback=cloud!4,colframe=cloud!70,fonttitle=\bfseries,title={Why it is done this way},breakable}
+\newtcolorbox{caution}{colback=warn!4,colframe=warn!70,fonttitle=\bfseries,title={Watch out},breakable}
+\newtcolorbox{exercise}{colback=soft,colframe=black!50,fonttitle=\bfseries,title={Check yourself},breakable}
+
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{soft},frame=single,
+        rulecolor=\color{black!25},columns=fullflexible,keepspaces=true,
+        showstringspaces=false,breaklines=true}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Listen -- Learning Doc 10}
+\rhead{\small Stage 1: the Foundations in Code}
+\cfoot{\thepage}
+
+\title{\textbf{Listen}\\[4pt]\large Learning Doc 10: Stage 1, the Foundations in Code\\
+       \normalsize The plumbing every later part of the agent stands on}
+\author{Implementation, stage 1 of 6}
+\date{21 October 2026}
+
+\begin{document}
+\sloppy
+\maketitle
+
+\begin{abstract}
+\noindent Docs 01--09 were design: what Listen should do and why. This is the first document
+about real code. Stage 1 built the agent's foundations: the package and its command line,
+settings, logging, events, the event bus, the worker loop every module runs, the supervisor that
+watches the workers, and CI. None of it hears your voice yet; all of it will be used by every
+later stage. Each section shows the actual code, the Python ideas it uses, and why it was written
+that way.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =====================================================================
+\section{What stage 1 built}
+\begin{center}
+\begin{tikzpicture}[
+  b/.style={draw,rounded corners,align=center,minimum height=9mm,inner sep=4pt,font=\small},
+  node distance=12mm and 30mm]
+  \node[b,fill=idea!10] (cli) {\texttt{listen run}\\\texttt{\_\_main\_\_.py}};
+  \node[b,fill=cloud!10,right=of cli] (app) {App\\\texttt{app.py}};
+  \node[b,fill=soft,above=of app] (set) {settings.yaml\\+ log file};
+  \node[b,fill=local!10,right=of app] (sup) {Supervisor\\checks every 5\,s};
+  \node[b,fill=cloud!10,below=of app] (bus) {EventBus};
+  \node[b,fill=local!10,below=of sup] (w) {worker threads\\(now: TerminalShell)};
+  \draw[-{Stealth}] (cli) -- (app);
+  \draw[-{Stealth}] (app) -- node[left,font=\scriptsize]{reads, opens} (set);
+  \draw[-{Stealth}] (app) -- (sup);
+  \draw[-{Stealth}] (app) -- (bus);
+  \draw[-{Stealth}] (sup) -- node[right,font=\scriptsize]{starts, restarts} (w);
+  \draw[-{Stealth}] (bus) -- node[above,font=\scriptsize]{events into inboxes} (w);
+\end{tikzpicture}
+\end{center}
+
+\noindent What happens when you type \texttt{listen run}:
+\begin{enumerate}[nosep]
+  \item The log file is opened (\texttt{agent/logs/listen.log}).
+  \item \texttt{agent/settings.yaml} is read and checked. A bad value stops here with a message
+        naming the key, exit code 2.
+  \item The \texttt{App} creates the event bus, the workers (in stage 1 only the terminal shell)
+        and the supervisor, and starts one thread per worker plus one for the supervisor.
+  \item ``Listen is ready.'' is printed and logged. The main thread waits.
+  \item Ctrl+C: ``Stopping\ldots'', every thread is told to stop, ``stopped'' is logged, exit
+        code 0.
+\end{enumerate}
+
+\begin{why}
+Every one of the 11 modules in stage 2--4 needs settings, logging, a thread, an inbox and a way
+to talk to the others. Building that once, first, and testing it on its own means each later
+module only has to write its own job. It is also pure Python with no microphone or AI model,
+which makes it the gentlest place to learn the tools.
+\end{why}
+
+% =====================================================================
+\section{Installing your own package}
+\subsection{The virtual environment}
+\begin{lstlisting}
+python -m venv agent/.venv
+agent/.venv/Scripts/python -m pip install -e "agent[dev]"
+\end{lstlisting}
+\noindent The first line creates \texttt{agent/.venv/}: a private copy of Python with its own
+library folder (Doc~02). The second installs the agent \emph{into} it:
+\begin{itemize}[nosep]
+  \item \texttt{-e} (\textbf{editable}): the installed package \emph{points at} your
+        \texttt{agent/listen\_agent/} folder instead of copying it. Edit a file, run again, the
+        change is there. Without \texttt{-e} you would reinstall after every edit.
+  \item \texttt{[dev]}: an \textbf{extra}, an optional group of libraries from
+        \texttt{pyproject.toml}. \texttt{pytest} and \texttt{ruff} are needed to develop, not to
+        run Listen, so they live in the \texttt{dev} group.
+\end{itemize}
+
+\subsection{\texttt{pyproject.toml}, section by section}
+\begin{lstlisting}
+[project]
+name = "listen-agent"
+dynamic = ["version"]                     # read from the code, see below
+requires-python = ">=3.11"
+dependencies = ["pyyaml>=6.0"]            # needed to RUN
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6"]        # needed to DEVELOP
+
+[project.scripts]
+listen = "listen_agent.__main__:main"     # creates listen.exe
+
+[tool.setuptools.dynamic]
+version = { attr = "listen_agent.__version__" }
+\end{lstlisting}
+\noindent \texttt{[project.scripts]} is why typing \texttt{listen} works: pip writes a small
+\texttt{listen.exe} into \texttt{.venv/Scripts/} that calls \texttt{main()} in
+\texttt{listen\_agent/\_\_main\_\_.py}. The version is written once, in
+\texttt{listen\_agent/\_\_init\_\_.py}, and \texttt{pyproject.toml} reads it from there, so the two
+can never disagree.
+
+\begin{concept}{pip + venv instead of uv}
+Doc~02 introduced \textbf{uv}, a faster tool that does the same job and also writes a lock file.
+uv is not installed on this laptop and the CI file (Doc~09) uses pip, so stage 1 uses the tools
+that come with Python. The idea of a lock file (exact versions of everything) is still worth
+having later; switching to uv then changes two commands, not the code.
+\end{concept}
+
+\begin{caution}
+The install also creates \texttt{agent/listen\_agent.egg-info/}: pip's bookkeeping, rebuilt on
+every install. It is now in \texttt{.gitignore}, like \texttt{.venv/}. Rule of thumb: anything a
+tool can regenerate does not belong in git.
+\end{caution}
+
+% =====================================================================
+\section{The command line}
+\begin{lstlisting}[language=Python]
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="listen", description="Listen voice agent")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    commands = parser.add_subparsers(dest="command", metavar="command")
+    commands.add_parser("run", help="start the agent (Ctrl+C stops it)")
+    return parser
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if args.command == "run":
+        return run_agent()
+    parser.print_help()
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
+\end{lstlisting}
+
+\begin{itemize}[nosep]
+  \item \textbf{\texttt{python -m listen\_agent}} runs the file \texttt{\_\_main\_\_.py} inside the
+        package. That is what the special file name is for.
+  \item \textbf{\texttt{argparse}} (standard library) turns \texttt{listen run} into
+        \texttt{args.command == "run"}, and writes the \texttt{-{}-help} text for free.
+        \textbf{Subcommands} (\texttt{run}, later \texttt{review}, \texttt{commands check},
+        \texttt{record-tests}) are how one program offers several actions, like
+        \texttt{git commit} and \texttt{git push}.
+  \item \textbf{\texttt{argv=None}}: normally argparse reads what you typed; tests pass a list
+        instead, \texttt{main(["run"])}, without starting a new process.
+  \item \textbf{\texttt{if \_\_name\_\_ == "\_\_main\_\_"}} is true only when the file is run, not
+        when it is imported (tests import it).
+\end{itemize}
+
+\subsection{Exit codes}
+A program ends with a number. 0 means success; anything else means ``something went wrong''.
+\begin{center}
+\begin{tabularx}{\textwidth}{c l X}
+\toprule
+\textbf{Code} & \textbf{Name} & \textbf{Meaning, and what the launcher (stage 2) will do} \\
+\midrule
+0 & \texttt{EXIT\_OK} & You stopped it. Do nothing. \\
+2 & \texttt{EXIT\_BAD\_SETTINGS} & \texttt{settings.yaml} is wrong. Restarting cannot help: tell you and stop. \\
+3 & \texttt{EXIT\_FATAL} & A thread crash-looped or hung. Restart the agent (max 3 in 10 min). \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =====================================================================
+\section{Settings: a file the program trusts only after checking}
+\begin{lstlisting}
+thresholds:                      # placeholders until calibrated (spec 3.6)
+  hearing: 0.60
+  match: 0.75
+\end{lstlisting}
+\noindent \texttt{load\_settings()} reads this with PyYAML's \texttt{safe\_load} (which builds
+plain dicts, lists, strings and numbers, never arbitrary Python objects) and then checks
+everything: unknown keys, wrong types, numbers outside 0--1. A typo stops start-up:
+\begin{lstlisting}
+Can't start: threshold: unknown setting
+Can't start: thresholds.match: must be a number from 0 to 1, got True
+\end{lstlisting}
+
+\begin{why}
+The friendly-looking alternative, ``ignore what you don't understand and use defaults'', is the
+dangerous one. If \texttt{threshold:} (missing \texttt{s}) were ignored, your change would
+silently do nothing and you would spend an evening wondering why. Fail loudly, early, and say
+exactly where.
+\end{why}
+
+\begin{caution}
+\textbf{YAML's ``yes'' trap.} In YAML, unquoted \texttt{yes}, \texttt{no}, \texttt{on} and
+\texttt{off} are read as \texttt{True}/\texttt{False}. And in Python, \texttt{True} is a kind of
+integer (\texttt{True == 1}), so \texttt{match: yes} would pass a ``number from 0 to 1'' check.
+The code refuses \texttt{bool} explicitly, and a test pins it.
+\end{caution}
+
+\paragraph{The BOM.} Notepad can save files with an invisible \emph{byte-order mark} at the
+start. Reading with \texttt{encoding="utf-8-sig"} removes it if present. One word in the code,
+one test, one confusing evening avoided.
+
+\paragraph{Other encodings (found by the review).} Notepad can also save as ``Unicode''
+(UTF-16) or ANSI (Windows-1252). Those bytes are not valid UTF-8, so reading them raised a raw
+\texttt{UnicodeDecodeError}: a traceback, exit code 1, nothing in the log, and the launcher would
+have restarted an agent that can never start. Now any read failure becomes
+\texttt{settings.yaml: can't read it (\ldots); save it as UTF-8} with exit code 2.
+
+% =====================================================================
+\section{Frozen dataclasses}
+\begin{lstlisting}[language=Python]
+@dataclass(frozen=True)
+class Thresholds:
+    hearing: float = 0.60
+    match: float = 0.75
+\end{lstlisting}
+
+\begin{concept}{dataclass}
+\texttt{@dataclass} writes the boring parts of a class for you: \texttt{\_\_init\_\_} (so
+\texttt{Thresholds(match=0.8)} works), \texttt{\_\_eq\_\_} (two objects with the same values are
+equal, which is how the test compares the shipped file with the defaults) and a readable
+\texttt{\_\_repr\_\_}. \texttt{frozen=True} makes every field read-only after creation:
+\texttt{settings.mode = "x"} raises \texttt{FrozenInstanceError}.
+\end{concept}
+
+\paragraph{Events use the same idea}, with two extra options:
+\begin{lstlisting}[language=Python]
+@dataclass(frozen=True, kw_only=True)
+class Event:
+    created_at: datetime = field(default_factory=_now)
+
+@dataclass(frozen=True)
+class ModuleError(Event):
+    module: str
+    error: str
+\end{lstlisting}
+\begin{itemize}[nosep]
+  \item \textbf{\texttt{default\_factory=\_now}}: call \texttt{\_now()} for \emph{each} new event.
+        Writing \texttt{= datetime.now(UTC)} instead would run once, when the class is defined,
+        and every event would share that one time.
+  \item \textbf{\texttt{kw\_only=True}}: Python forbids a field without a default after one with a
+        default. \texttt{created\_at} has a default and \texttt{module} does not, so normally
+        \texttt{ModuleError} could not exist. Keyword-only fields are moved to the end, which
+        allows \texttt{ModuleError("voice", "no mic")}.
+  \item \textbf{UTC}: \texttt{datetime.now(UTC)} carries its time zone. Spec rule: all stored
+        times are UTC; convert to local time only to display.
+\end{itemize}
+
+\begin{why}
+One event object is put into several inboxes and read by several threads at once. If any thread
+could change it, the others would see it change under them: a bug that appears once a week and
+never when you look. Frozen objects make that impossible.
+\end{why}
+
+% =====================================================================
+\section{Threads and queues}
+\begin{concept}{thread}
+A \textbf{thread} is a second line of execution inside the same program. Listen will have one per
+module so that, for example, the transcriber can work on a recording while the listener keeps
+hearing. \texttt{threading.Thread(target=f).start()} runs \texttt{f} alongside everything else.
+\end{concept}
+
+\begin{concept}{queue}
+A \texttt{queue.Queue} is a thread-safe waiting line: one thread \texttt{put}s, another
+\texttt{get}s, in order. \texttt{get(timeout=1)} waits up to one second and then raises
+\texttt{queue.Empty}. Every worker owns one, its \textbf{inbox}.
+\end{concept}
+
+\noindent The worker loop, the heart of every module:
+\begin{lstlisting}[language=Python]
+_NOTHING = object()
+
+def run_once(self) -> None:
+    self.beat()                                   # heartbeat: "still alive"
+    try:
+        message = self.inbox.get(timeout=self.wait_seconds)
+    except queue.Empty:
+        message = _NOTHING
+    try:
+        if message is _NOTHING:
+            self.idle()                           # periodic checks go here
+        else:
+            self.handle(message)                  # the module's real job
+    except Exception as exc:
+        log.exception("%s failed handling %s", self.name, type(message).__name__)
+        self.bus.publish(ModuleError(self.name, f"{type(exc).__name__}: {exc}"))
+
+def run(self, stop: threading.Event) -> None:
+    while not stop.is_set():
+        self.run_once()
+\end{lstlisting}
+
+\begin{itemize}[nosep]
+  \item \textbf{The sentinel \texttt{\_NOTHING}}: a unique object meaning ``nothing arrived''.
+        \texttt{None} cannot play that role because \texttt{None} could be a real message. A
+        brand-new \texttt{object()} is equal to nothing else in the program.
+  \item \textbf{\texttt{threading.Event}} (not a bus event): a thread-safe on/off flag. Setting
+        \texttt{stop} tells every loop to finish its current pass and end.
+  \item \textbf{Why a 1-second timeout}: an idle worker still loops every second, so it notices
+        \texttt{stop} quickly and keeps its heartbeat fresh.
+  \item \textbf{\texttt{except Exception}}: a bug in \texttt{handle} is logged with its traceback,
+        announced as \texttt{ModuleError}, and the loop carries on with the next message.
+\end{itemize}
+
+\begin{caution}
+\texttt{except Exception} catches errors but not \texttt{BaseException}s such as
+\texttt{SystemExit}. Those escape, the thread dies, and that is the supervisor's job (Section~\ref{sec:supervisor}).
+Also: never put words you heard into an exception message. Tracebacks go to the log, and the
+log must stay free of spoken words.
+\end{caution}
+
+\begin{caution}
+\textbf{The error storm (found by the review).} The terminal shell listens to \emph{every}
+event, including \texttt{ModuleError}. If printing ever fails (the console closed), the shell
+fails on an event, publishes a \texttt{ModuleError}, receives it, fails to print \emph{that},
+publishes another\ldots{} The reviewer measured about 100{,}000 error reports in one second,
+enough to rotate away the whole log. The fix is one condition: failing while handling a
+\texttt{ModuleError} is logged but does not publish a new one. Lesson: any part that both
+\emph{reports} errors and \emph{listens to} error reports needs a brake.
+\end{caution}
+
+\paragraph{Daemon threads.} Worker threads are started with \texttt{daemon=True}: when the main
+program ends, they end with it. A thread that is truly stuck cannot block Listen from exiting.
+
+% =====================================================================
+\section{The event bus: publish and subscribe}
+\begin{lstlisting}[language=Python]
+def publish(self, event: Event) -> None:
+    with self._lock:
+        inboxes = []
+        for cls in type(event).__mro__:      # the class, its parents, ..., Event, object
+            for inbox in self._subscribers.get(cls, ()):
+                if inbox not in inboxes:
+                    inboxes.append(inbox)
+    for inbox in inboxes:
+        inbox.put(event)
+\end{lstlisting}
+
+\begin{concept}{MRO (method resolution order)}
+Every class knows its family tree: \texttt{ModuleError.\_\_mro\_\_} is
+\texttt{(ModuleError, Event, object)}. Walking it means a subscription to \texttt{Event} receives
+every kind of event. That is how the terminal shell prints everything with one line:
+\texttt{bus.subscribe(Event, self.inbox)}, while a module that only cares about
+\texttt{Transcribed} subscribes to just that.
+\end{concept}
+
+\begin{analogy}
+A newsletter office. Modules sign up for topics (``ModuleError'', ``everything''). When a story
+comes in, the office looks up who signed up for that topic \emph{or any broader topic}, and drops
+one copy in each person's mailbox. Nobody gets the same story twice, and the writer never needs
+to know who reads it.
+\end{analogy}
+
+\section{Locks and race conditions}
+\begin{concept}{race condition}
+Two threads touching the same data at the same moment, where the result depends on who got there
+first. Example: the shell thread subscribes (adding to a list) while the voice thread publishes
+(reading the same list). Without care, the reader can see a half-changed list.
+\end{concept}
+\noindent A \texttt{threading.Lock} lets only one thread at a time into a \texttt{with
+self.\_lock:} block. \texttt{publish} \emph{collects} the inboxes inside the lock and
+\emph{delivers} outside it, so the lock is held for microseconds and never while waiting.
+Two tests hammer this: 8 threads publishing 500 events each (all 4{,}000 must arrive), and 200
+subscriptions made while another thread publishes non-stop.
+
+% =====================================================================
+\section{The supervisor}\label{sec:supervisor}
+Every 5 seconds the supervisor looks at each worker:
+\begin{lstlisting}[language=Python]
+if not self.threads[worker.name].is_alive():          # dead
+    if not self._may_restart(worker.name, now):
+        self.on_fatal(f"{worker.name} keeps crashing")  # 4th death in a minute
+        return
+    self._start_thread(worker)                          # new thread, same worker + inbox
+elif now - worker.last_beat > HUNG_AFTER:              # alive but silent for 30 s
+    self.on_fatal(f"{worker.name} stopped responding")
+\end{lstlisting}
+\begin{itemize}[nosep]
+  \item \textbf{A Python thread cannot be restarted}, so a dead worker gets a \emph{new} thread
+        running the \emph{same} worker object. The inbox belongs to the worker, so waiting
+        messages survive.
+  \item \textbf{Restart window}: a \texttt{deque} (a list that is cheap to trim from the front)
+        holds the times of recent restarts. Times older than 60 seconds are dropped; if 3
+        remain, a fourth death is a crash loop.
+  \item \textbf{Hung}: Python cannot safely kill a thread, so the only cure is restarting the
+        whole agent: \texttt{on\_fatal} sets exit code 3 and the launcher takes over.
+\end{itemize}
+
+\paragraph{Sleep is not a hang (found by the review).} On Windows, \texttt{time.monotonic} keeps
+counting while the laptop sleeps. Close the lid for an hour, open it, and the first check could
+see every heartbeat as an hour old: ``stopped responding'', agent stopped. But the supervisor
+itself checks every 5 seconds, so if more than 30 seconds passed \emph{between two of its own
+checks}, the whole laptop must have been asleep. In that case it logs ``clock jumped'' and
+refreshes every heartbeat instead of blaming the workers. A worker that is really stuck is still
+caught 30 seconds later.
+
+% =====================================================================
+\section{Dependency injection and fakes}
+How do you test ``silent for 30 seconds'' without waiting 30 seconds? You do not let the code
+read the real clock directly. You \emph{hand it} a clock:
+\begin{lstlisting}[language=Python]
+class Worker:
+    def __init__(self, bus, clock=time.monotonic): ...   # real clock by default
+
+class FakeClock:                                          # tests/conftest.py
+    def __init__(self, start=1000.0): self.now = start
+    def __call__(self): return self.now
+    def advance(self, seconds): self.now += seconds
+
+# in a test:
+clock.advance(31)
+supervisor.check()
+assert fatal == ["stuck stopped responding"]
+\end{lstlisting}
+
+\begin{concept}{dependency injection}
+Passing a part's dependencies in (a clock, a place to print, a bus) instead of letting it reach
+out for them. In normal use the defaults are the real things (\texttt{time.monotonic},
+\texttt{print}); in tests you pass fakes. The terminal shell takes \texttt{out=print} for the
+same reason: tests pass \texttt{out=lines.append} and then read the list.
+\end{concept}
+
+\paragraph{\texttt{time.monotonic}} not \texttt{time.time}: the monotonic clock only ever moves
+forward. If Windows adjusts the wall clock (daylight saving, an internet time sync), measured
+durations stay correct.
+
+% =====================================================================
+\section{pytest tools used in stage 1}
+\begin{center}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{Tool} & \textbf{What it does, and where we used it} \\
+\midrule
+fixture & A function that prepares something a test needs; a test asks for it by naming it as a parameter. \texttt{bus}, \texttt{clock}, \texttt{stop}. \\
+\texttt{yield} in a fixture & Code after \texttt{yield} runs after the test: clean-up. \texttt{log\_file} removes its log handler; \texttt{stop} sets the flag so test threads finish. \\
+\texttt{conftest.py} & Fixtures in it are available to every test in the folder, without importing. The fake clock lives there. \\
+\texttt{tmp\_path} & A fresh, empty folder per test, deleted later. Settings and log files are written there, never in the real \texttt{agent/}. \\
+\texttt{capsys} & Captures what was printed, to check \texttt{-{}-version} and the help text. \\
+\texttt{caplog} & Captures log records, to check ``recorder failed'' was logged. \\
+\texttt{monkeypatch} & Temporarily replaces something; undone after the test. \texttt{main(["run"])} calls a stand-in \texttt{run\_agent}, not the real agent. \\
+\texttt{parametrize} & Runs one test with many inputs: 8 bad settings files, one test function. \\
+\texttt{pytest.raises} & Passes only if the code raises the expected error. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\paragraph{Watching it fail.} Every task began with a test run that failed with
+\texttt{ModuleNotFoundError}: the right reason, because the code did not exist yet. A test that
+passes before the code exists is testing nothing.
+
+% =====================================================================
+\section{Logging}
+\begin{lstlisting}[language=Python]
+LOG_FORMAT = "%(asctime)s %(levelname)-5s %(name)-8s %(message)s"
+handler = RotatingFileHandler(log_dir / "listen.log", maxBytes=1_048_576, backupCount=5,
+                              encoding="utf-8")
+\end{lstlisting}
+\begin{itemize}[nosep]
+  \item A \textbf{logger} is what code writes to: \texttt{log = logging.getLogger("core")}. Its
+        name becomes the module column.
+  \item A \textbf{handler} decides where lines go (here a file); a \textbf{formatter} decides how
+        they look. \texttt{-5s} and \texttt{-8s} pad to 5 and 8 characters so columns line up.
+  \item \textbf{Rotation}: at 1\,MB, \texttt{listen.log} becomes \texttt{listen.log.1}, and so on
+        up to \texttt{.5}; the oldest is deleted. The log never grows past about 6\,MB.
+\end{itemize}
+A real line from the first run:
+\begin{lstlisting}
+2026-10-21 15:09:37,732 INFO  core     ready (version 0.1.0, mode wake)
+\end{lstlisting}
+
+\paragraph{The \texttt{words()} rule.} Anything you said is wrapped before logging:
+\begin{lstlisting}[language=Python]
+log.info("heard %s", words(text))
+\end{lstlisting}
+\noindent \texttt{words()} returns \texttt{[words hidden]} unless debug is
+on. The flag is a plain module variable that starts \texttt{False} in every new process, which
+is exactly ``debug lasts until restart''. A test logs ``search what is an atom'' and fails if
+``atom'' reaches the file.
+
+% =====================================================================
+\section{ruff and CI}
+\texttt{ruff check agent} reads the code without running it. The rule families switched on:
+\begin{center}
+\begin{tabularx}{\textwidth}{c X}
+\toprule
+\textbf{Code} & \textbf{Catches} \\
+\midrule
+E & Style errors from PEP 8, Python's style guide (e.g.\ lines over 100 characters). \\
+F & Real mistakes: unused imports, undefined names (Pyflakes). \\
+I & Imports out of order (standard library, then other libraries, then ours). \\
+B & Likely bugs (flake8-bugbear), e.g.\ a list as a default argument. \\
+UP & Old syntax a newer Python can write better (pyupgrade), e.g.\ \texttt{int | float}. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\noindent \texttt{.github/workflows/ci.yml} runs the same \texttt{ruff check agent} and
+\texttt{pytest agent} on a fresh Windows machine on every push. If either fails, the commit gets
+a red cross on GitHub. The server and web jobs are added in stages 4 and 5, when those programs
+have code.
+
+% =====================================================================
+\section{Glossary}
+\begin{description}[style=nextline,leftmargin=1.2cm,itemsep=2pt]
+  \item[argparse] Python's standard library for reading command-line arguments.
+  \item[Daemon thread] A thread that ends automatically when the main program ends.
+  \item[Dataclass] A class whose \texttt{\_\_init\_\_}, equality and printing are generated from its fields.
+  \item[Dependency injection] Handing a part what it depends on (clock, output) instead of letting it fetch it.
+  \item[Editable install] \texttt{pip install -e}: the installed package points at your source folder.
+  \item[Exit code] The number a program ends with; 0 is success.
+  \item[Extra] An optional group of dependencies, e.g.\ \texttt{[dev]}.
+  \item[Fixture] A pytest helper that prepares (and cleans up) something tests need.
+  \item[Frozen] A dataclass whose fields cannot be changed after creation.
+  \item[Handler / formatter] Where log lines go / how they look.
+  \item[Heartbeat] A timestamp a worker updates on every loop pass, proving it is alive.
+  \item[Lock] Lets only one thread at a time run a block of code.
+  \item[Monotonic clock] A clock that only moves forward; right for measuring durations.
+  \item[MRO] A class's family tree, from itself up to \texttt{object}.
+  \item[Queue] A thread-safe waiting line; each worker's inbox.
+  \item[Race condition] A bug that depends on which thread gets somewhere first.
+  \item[Sentinel] A unique object used as a marker, e.g.\ ``nothing arrived''.
+  \item[Subcommand] One action of a multi-action program: \texttt{listen run}.
+  \item[Thread] A second line of execution inside the same program.
+\end{description}
+
+% =====================================================================
+\section{Check your understanding}
+\begin{exercise}
+\begin{enumerate}
+  \item You change \texttt{settings.yaml} to \texttt{thresholds: \{ match: 80 \}}. What happens
+        when you run \texttt{listen run}, and what exit code do you get?
+  \item Why can't the worker use \texttt{None} to mean ``no message arrived''?
+  \item Why is \texttt{created\_at} filled with \texttt{default\_factory=\_now} and not
+        \texttt{= datetime.now(UTC)}?
+  \item A worker's \texttt{handle} raises \texttt{ValueError} on every message. Does the
+        supervisor restart its thread? Why or why not?
+  \item How does the test for ``silent for 30 seconds'' finish in a fraction of a second?
+  \item The terminal shell subscribes to \texttt{Event}. Why does it receive a
+        \texttt{ModuleError}?
+  \item Why does \texttt{publish} put events into inboxes \emph{after} leaving the
+        \texttt{with self.\_lock:} block?
+  \item What would go wrong if \texttt{agent/listen\_agent.egg-info/} were committed?
+\end{enumerate}
+\end{exercise}
+
+\end{document}
