@@ -16,8 +16,10 @@ CI's verdict only changes when our code changes, never because a tool released a
 can add a check and turn CI red on a commit that only touched the README.
 
 ## Scope
-- `agent/pyproject.toml`: `dev = ["pytest==9.1.1", "ruff==0.17.1"]` (the versions installed today;
-  confirm with `agent/.venv/Scripts/python -m pip show ruff pytest`)
+- `agent/pyproject.toml`: `dev = ["pytest==9.2.0", "ruff==0.17.3"]`
+  (updated 2026-10-30 before starting: the newest releases on that day; the laptop still had
+  pytest 9.1.1 and ruff 0.17.1, and unpinned CI was already installing the newer ones)
+- upgrade the laptop's copies to match: reinstall with `pip install -e "agent[dev]"`
 - `docs/cheatsheet.md`: a line on how to upgrade a pinned tool on purpose
 
 ## Out of scope
