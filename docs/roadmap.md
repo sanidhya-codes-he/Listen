@@ -8,7 +8,16 @@ change, regenerate it (ask Claude) rather than editing the diagram by hand.
 **Rule:** before starting any issue, re-read its file and update it to match decisions made since.
 
 ## Ready to start now
-Everything these depend on is done: M1, M2, M3, M4, M6, S2-03, S2-04.
+Everything these depend on is done: M2, M3, M4, M6, S2-03, S2-04, S2-08.
+
+## The flowchart
+
+One box per issue, left to right in build order (click it to open full size):
+
+![Listen build flowchart](roadmap-flowchart.svg)
+
+After an issue closes, set its status to `done (#PR)` in the table below and redraw:
+`agent/.venv/Scripts/python docs/issues/draw_flowchart.py`
 
 ## The graph
 
@@ -192,7 +201,7 @@ Fill in the GitHub number after `gh issue create`; set the status when the issue
 | ID | Title | Depends on | File | GitHub # | Status |
 |---|---|---|---|---|---|
 | S1 | Stage 1: foundations | - | [s1-foundations.md](issues/s1-foundations.md) | #4 | done (#1) |
-| M1 | Pin ruff and pytest to exact versions | S1 | [m1-pin-dev-tools.md](issues/m1-pin-dev-tools.md) | #10 | todo |
+| M1 | Pin ruff and pytest to exact versions | S1 | [m1-pin-dev-tools.md](issues/m1-pin-dev-tools.md) | #10 | done (#68) |
 | M2 | Strict YAML loading: refuse duplicate keys | S1 | [m2-strict-yaml.md](issues/m2-strict-yaml.md) | #11 | todo |
 | M3 | Give "bad settings" its own exit code | S1 | [m3-exit-codes.md](issues/m3-exit-codes.md) | #12 | todo |
 | M4 | Make the bus concurrency test able to fail | S1 | [m4-bus-concurrency-test.md](issues/m4-bus-concurrency-test.md) | #13 | todo |

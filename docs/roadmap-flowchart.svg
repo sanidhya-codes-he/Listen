@@ -1,0 +1,637 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="4130" height="1744" viewBox="0 0 4130 1744" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<style>
+.edge { opacity: 0.6; transition: opacity .15s; }
+.node { transition: opacity .15s; }
+svg:has(.node:hover) .edge { opacity: 0.07; }
+svg:has(.node:hover) .node { opacity: 0.3; }
+svg:has(#n_M1:hover) .e_M1 { opacity: 1; stroke-width: 3; }
+svg:has(#n_M1:hover) #n_M1, svg:has(#n_M1:hover) .nb_M1 { opacity: 1; }
+svg:has(#n_M2:hover) .e_M2 { opacity: 1; stroke-width: 3; }
+svg:has(#n_M2:hover) #n_M2, svg:has(#n_M2:hover) .nb_M2 { opacity: 1; }
+svg:has(#n_M3:hover) .e_M3 { opacity: 1; stroke-width: 3; }
+svg:has(#n_M3:hover) #n_M3, svg:has(#n_M3:hover) .nb_M3 { opacity: 1; }
+svg:has(#n_M4:hover) .e_M4 { opacity: 1; stroke-width: 3; }
+svg:has(#n_M4:hover) #n_M4, svg:has(#n_M4:hover) .nb_M4 { opacity: 1; }
+svg:has(#n_M5:hover) .e_M5 { opacity: 1; stroke-width: 3; }
+svg:has(#n_M5:hover) #n_M5, svg:has(#n_M5:hover) .nb_M5 { opacity: 1; }
+svg:has(#n_M6:hover) .e_M6 { opacity: 1; stroke-width: 3; }
+svg:has(#n_M6:hover) #n_M6, svg:has(#n_M6:hover) .nb_M6 { opacity: 1; }
+svg:has(#n_S1:hover) .e_S1 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S1:hover) #n_S1, svg:has(#n_S1:hover) .nb_S1 { opacity: 1; }
+svg:has(#n_S2_01:hover) .e_S2_01 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_01:hover) #n_S2_01, svg:has(#n_S2_01:hover) .nb_S2_01 { opacity: 1; }
+svg:has(#n_S2_02:hover) .e_S2_02 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_02:hover) #n_S2_02, svg:has(#n_S2_02:hover) .nb_S2_02 { opacity: 1; }
+svg:has(#n_S2_03:hover) .e_S2_03 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_03:hover) #n_S2_03, svg:has(#n_S2_03:hover) .nb_S2_03 { opacity: 1; }
+svg:has(#n_S2_04:hover) .e_S2_04 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_04:hover) #n_S2_04, svg:has(#n_S2_04:hover) .nb_S2_04 { opacity: 1; }
+svg:has(#n_S2_05:hover) .e_S2_05 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_05:hover) #n_S2_05, svg:has(#n_S2_05:hover) .nb_S2_05 { opacity: 1; }
+svg:has(#n_S2_06:hover) .e_S2_06 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_06:hover) #n_S2_06, svg:has(#n_S2_06:hover) .nb_S2_06 { opacity: 1; }
+svg:has(#n_S2_07:hover) .e_S2_07 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_07:hover) #n_S2_07, svg:has(#n_S2_07:hover) .nb_S2_07 { opacity: 1; }
+svg:has(#n_S2_08:hover) .e_S2_08 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_08:hover) #n_S2_08, svg:has(#n_S2_08:hover) .nb_S2_08 { opacity: 1; }
+svg:has(#n_S2_09:hover) .e_S2_09 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_09:hover) #n_S2_09, svg:has(#n_S2_09:hover) .nb_S2_09 { opacity: 1; }
+svg:has(#n_S2_10:hover) .e_S2_10 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_10:hover) #n_S2_10, svg:has(#n_S2_10:hover) .nb_S2_10 { opacity: 1; }
+svg:has(#n_S2_11:hover) .e_S2_11 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_11:hover) #n_S2_11, svg:has(#n_S2_11:hover) .nb_S2_11 { opacity: 1; }
+svg:has(#n_S2_12:hover) .e_S2_12 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_12:hover) #n_S2_12, svg:has(#n_S2_12:hover) .nb_S2_12 { opacity: 1; }
+svg:has(#n_S2_13:hover) .e_S2_13 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_13:hover) #n_S2_13, svg:has(#n_S2_13:hover) .nb_S2_13 { opacity: 1; }
+svg:has(#n_S2_14:hover) .e_S2_14 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_14:hover) #n_S2_14, svg:has(#n_S2_14:hover) .nb_S2_14 { opacity: 1; }
+svg:has(#n_S2_15:hover) .e_S2_15 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_15:hover) #n_S2_15, svg:has(#n_S2_15:hover) .nb_S2_15 { opacity: 1; }
+svg:has(#n_S2_16:hover) .e_S2_16 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_16:hover) #n_S2_16, svg:has(#n_S2_16:hover) .nb_S2_16 { opacity: 1; }
+svg:has(#n_S2_17:hover) .e_S2_17 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_17:hover) #n_S2_17, svg:has(#n_S2_17:hover) .nb_S2_17 { opacity: 1; }
+svg:has(#n_S2_18:hover) .e_S2_18 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_18:hover) #n_S2_18, svg:has(#n_S2_18:hover) .nb_S2_18 { opacity: 1; }
+svg:has(#n_S2_19:hover) .e_S2_19 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_19:hover) #n_S2_19, svg:has(#n_S2_19:hover) .nb_S2_19 { opacity: 1; }
+svg:has(#n_S3_01:hover) .e_S3_01 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S3_01:hover) #n_S3_01, svg:has(#n_S3_01:hover) .nb_S3_01 { opacity: 1; }
+svg:has(#n_S3_02:hover) .e_S3_02 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S3_02:hover) #n_S3_02, svg:has(#n_S3_02:hover) .nb_S3_02 { opacity: 1; }
+svg:has(#n_S3_03:hover) .e_S3_03 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S3_03:hover) #n_S3_03, svg:has(#n_S3_03:hover) .nb_S3_03 { opacity: 1; }
+svg:has(#n_S3_04:hover) .e_S3_04 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S3_04:hover) #n_S3_04, svg:has(#n_S3_04:hover) .nb_S3_04 { opacity: 1; }
+svg:has(#n_S3_05:hover) .e_S3_05 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S3_05:hover) #n_S3_05, svg:has(#n_S3_05:hover) .nb_S3_05 { opacity: 1; }
+svg:has(#n_S3_06:hover) .e_S3_06 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S3_06:hover) #n_S3_06, svg:has(#n_S3_06:hover) .nb_S3_06 { opacity: 1; }
+svg:has(#n_S3_07:hover) .e_S3_07 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S3_07:hover) #n_S3_07, svg:has(#n_S3_07:hover) .nb_S3_07 { opacity: 1; }
+svg:has(#n_S3_08:hover) .e_S3_08 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S3_08:hover) #n_S3_08, svg:has(#n_S3_08:hover) .nb_S3_08 { opacity: 1; }
+svg:has(#n_S4_01:hover) .e_S4_01 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S4_01:hover) #n_S4_01, svg:has(#n_S4_01:hover) .nb_S4_01 { opacity: 1; }
+svg:has(#n_S4_02:hover) .e_S4_02 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S4_02:hover) #n_S4_02, svg:has(#n_S4_02:hover) .nb_S4_02 { opacity: 1; }
+svg:has(#n_S4_03:hover) .e_S4_03 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S4_03:hover) #n_S4_03, svg:has(#n_S4_03:hover) .nb_S4_03 { opacity: 1; }
+svg:has(#n_S4_04:hover) .e_S4_04 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S4_04:hover) #n_S4_04, svg:has(#n_S4_04:hover) .nb_S4_04 { opacity: 1; }
+svg:has(#n_S4_05:hover) .e_S4_05 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S4_05:hover) #n_S4_05, svg:has(#n_S4_05:hover) .nb_S4_05 { opacity: 1; }
+svg:has(#n_S4_06:hover) .e_S4_06 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S4_06:hover) #n_S4_06, svg:has(#n_S4_06:hover) .nb_S4_06 { opacity: 1; }
+svg:has(#n_S4_07:hover) .e_S4_07 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S4_07:hover) #n_S4_07, svg:has(#n_S4_07:hover) .nb_S4_07 { opacity: 1; }
+svg:has(#n_S4_08:hover) .e_S4_08 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S4_08:hover) #n_S4_08, svg:has(#n_S4_08:hover) .nb_S4_08 { opacity: 1; }
+svg:has(#n_S4_09:hover) .e_S4_09 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S4_09:hover) #n_S4_09, svg:has(#n_S4_09:hover) .nb_S4_09 { opacity: 1; }
+svg:has(#n_S5_01:hover) .e_S5_01 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S5_01:hover) #n_S5_01, svg:has(#n_S5_01:hover) .nb_S5_01 { opacity: 1; }
+svg:has(#n_S5_02:hover) .e_S5_02 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S5_02:hover) #n_S5_02, svg:has(#n_S5_02:hover) .nb_S5_02 { opacity: 1; }
+svg:has(#n_S5_03:hover) .e_S5_03 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S5_03:hover) #n_S5_03, svg:has(#n_S5_03:hover) .nb_S5_03 { opacity: 1; }
+svg:has(#n_S5_04:hover) .e_S5_04 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S5_04:hover) #n_S5_04, svg:has(#n_S5_04:hover) .nb_S5_04 { opacity: 1; }
+svg:has(#n_S5_05:hover) .e_S5_05 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S5_05:hover) #n_S5_05, svg:has(#n_S5_05:hover) .nb_S5_05 { opacity: 1; }
+svg:has(#n_S5_06:hover) .e_S5_06 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S5_06:hover) #n_S5_06, svg:has(#n_S5_06:hover) .nb_S5_06 { opacity: 1; }
+svg:has(#n_S5_07:hover) .e_S5_07 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S5_07:hover) #n_S5_07, svg:has(#n_S5_07:hover) .nb_S5_07 { opacity: 1; }
+svg:has(#n_S5_08:hover) .e_S5_08 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S5_08:hover) #n_S5_08, svg:has(#n_S5_08:hover) .nb_S5_08 { opacity: 1; }
+svg:has(#n_S5_09:hover) .e_S5_09 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S5_09:hover) #n_S5_09, svg:has(#n_S5_09:hover) .nb_S5_09 { opacity: 1; }
+svg:has(#n_S5_10:hover) .e_S5_10 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S5_10:hover) #n_S5_10, svg:has(#n_S5_10:hover) .nb_S5_10 { opacity: 1; }
+svg:has(#n_S6_01:hover) .e_S6_01 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S6_01:hover) #n_S6_01, svg:has(#n_S6_01:hover) .nb_S6_01 { opacity: 1; }
+svg:has(#n_S6_02:hover) .e_S6_02 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S6_02:hover) #n_S6_02, svg:has(#n_S6_02:hover) .nb_S6_02 { opacity: 1; }
+svg:has(#n_S6_03:hover) .e_S6_03 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S6_03:hover) #n_S6_03, svg:has(#n_S6_03:hover) .nb_S6_03 { opacity: 1; }
+svg:has(#n_S6_04:hover) .e_S6_04 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S6_04:hover) #n_S6_04, svg:has(#n_S6_04:hover) .nb_S6_04 { opacity: 1; }
+svg:has(#n_S6_05:hover) .e_S6_05 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S6_05:hover) #n_S6_05, svg:has(#n_S6_05:hover) .nb_S6_05 { opacity: 1; }
+</style>
+<defs>
+<marker id="a_S1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2E7D32"/></marker>
+<marker id="a_M" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#B8860B"/></marker>
+<marker id="a_S2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1565C0"/></marker>
+<marker id="a_S3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#00796B"/></marker>
+<marker id="a_S4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6A1B9A"/></marker>
+<marker id="a_S5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#E65100"/></marker>
+<marker id="a_S6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#455A64"/></marker>
+</defs>
+<rect width="4130" height="1744" fill="#FFFFFF"/>
+<text x="30" y="42" font-size="26" font-weight="700" fill="#1F2933">Listen: how the project gets built</text>
+<text x="30" y="70" font-size="14" fill="#52606D">One box = one GitHub issue, one band = one stage. Read left to right: an arrow means “must be finished before”; boxes in the same column can be done in any order.</text>
+<text x="30" y="94" font-size="14" fill="#52606D">Arrows take the colour of the stage they start in; dashed arrows cross into another stage. Thick border = ready to start now. ✓ = done. Open this file in a browser and hover a box to highlight its links.</text>
+<rect x="30" y="150" width="4070" height="86" fill="#F3FAF3" stroke="#E4E7EB"/>
+<rect x="30" y="150" width="6" height="86" fill="#2E7D32"/>
+<text x="46" y="174" font-size="14" font-weight="700" fill="#2E7D32">Stage 1</text>
+<text x="46" y="191" font-size="14" font-weight="400" fill="#2E7D32">foundations</text>
+<rect x="30" y="236" width="4070" height="382" fill="#FFFCEF" stroke="#E4E7EB"/>
+<rect x="30" y="236" width="6" height="382" fill="#B8860B"/>
+<text x="46" y="260" font-size="14" font-weight="700" fill="#B8860B">Follow-ups</text>
+<text x="46" y="277" font-size="14" font-weight="400" fill="#B8860B">from review</text>
+<rect x="30" y="618" width="4070" height="382" fill="#F4F8FE" stroke="#E4E7EB"/>
+<rect x="30" y="618" width="6" height="382" fill="#1565C0"/>
+<text x="46" y="642" font-size="14" font-weight="700" fill="#1565C0">Stage 2</text>
+<text x="46" y="659" font-size="14" font-weight="400" fill="#1565C0">voice agent</text>
+<rect x="30" y="1000" width="4070" height="160" fill="#F2FAF9" stroke="#E4E7EB"/>
+<rect x="30" y="1000" width="6" height="160" fill="#00796B"/>
+<text x="46" y="1024" font-size="14" font-weight="700" fill="#00796B">Stage 3</text>
+<text x="46" y="1041" font-size="14" font-weight="400" fill="#00796B">usage + data</text>
+<rect x="30" y="1160" width="4070" height="86" fill="#F8F4FC" stroke="#E4E7EB"/>
+<rect x="30" y="1160" width="6" height="86" fill="#6A1B9A"/>
+<text x="46" y="1184" font-size="14" font-weight="700" fill="#6A1B9A">Stage 4</text>
+<text x="46" y="1201" font-size="14" font-weight="400" fill="#6A1B9A">server + sync</text>
+<rect x="30" y="1246" width="4070" height="308" fill="#FFF8F2" stroke="#E4E7EB"/>
+<rect x="30" y="1246" width="6" height="308" fill="#E65100"/>
+<text x="46" y="1270" font-size="14" font-weight="700" fill="#E65100">Stage 5</text>
+<text x="46" y="1287" font-size="14" font-weight="400" fill="#E65100">web app</text>
+<rect x="30" y="1554" width="4070" height="160" fill="#F6F7F8" stroke="#E4E7EB"/>
+<rect x="30" y="1554" width="6" height="160" fill="#455A64"/>
+<text x="46" y="1578" font-size="14" font-weight="700" fill="#455A64">Stage 6</text>
+<text x="46" y="1595" font-size="14" font-weight="400" fill="#455A64">release</text>
+<path class="edge e_S1 e_M1" d="M350,171.2 C390,171.2 368,279.0 408,279.0" fill="none" stroke="#2E7D32" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S1)"/>
+<path class="edge e_S1 e_M2" d="M350,178.5 C390,178.5 368,353.0 408,353.0" fill="none" stroke="#2E7D32" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S1)"/>
+<path class="edge e_S1 e_M3" d="M350,185.8 C390,185.8 368,427.0 408,427.0" fill="none" stroke="#2E7D32" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S1)"/>
+<path class="edge e_S1 e_M4" d="M350,193.0 C390,193.0 368,501.0 408,501.0" fill="none" stroke="#2E7D32" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S1)"/>
+<path class="edge e_M3 e_M5" d="M600,417.3 C640,417.3 618,279.0 658,279.0" fill="none" stroke="#B8860B" stroke-width="1.6" marker-end="url(#a_M)"/>
+<path class="edge e_S1 e_M6" d="M350,200.2 C390,200.2 368,575.0 408,575.0" fill="none" stroke="#2E7D32" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S1)"/>
+<path class="edge e_M2 e_S2_01" d="M600,343.3 C640,343.3 618,735.0 658,735.0" fill="none" stroke="#B8860B" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_M)"/>
+<path class="edge e_S2_01 e_S2_02" d="M850,735.0 C890,735.0 868,883.0 908,883.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S1 e_S2_03" d="M350,207.5 C390,207.5 368,661.0 408,661.0" fill="none" stroke="#2E7D32" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S1)"/>
+<path class="edge e_S1 e_S2_04" d="M350,214.8 C390,214.8 368,735.0 408,735.0" fill="none" stroke="#2E7D32" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S1)"/>
+<path class="edge e_S2_04 e_S2_05" d="M600,735.0 C640,735.0 618,809.0 658,809.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_05 e_S2_06" d="M850,809.0 C890,809.0 868,957.0 908,957.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_02 e_S2_07" d="M1100,873.3 C1140,873.3 1118,809.0 1158,809.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_M1 e_S2_08" d="M600,279.0 C640,279.0 618,661.0 658,661.0" fill="none" stroke="#B8860B" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_M)"/>
+<path class="edge e_S2_08 e_S2_09" d="M850,641.7 C890,641.7 868,661.0 908,661.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_09 e_S2_10" d="M1100,651.3 C1140,651.3 1118,661.0 1158,661.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_09 e_S2_11" d="M1100,670.7 C1140,670.7 1118,735.0 1158,735.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_11 e_S2_12" d="M1350,735.0 C1390,735.0 1368,661.0 1408,661.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_08 e_S2_13" d="M850,651.3 C890,651.3 868,735.0 908,735.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_10 e_S2_14" d="M1350,661.0 C1504.0,661.0 1504.0,646.5 1658,646.5" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_12 e_S2_14" d="M1600,661.0 C1640,661.0 1618,661.0 1658,661.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_13 e_S2_14" d="M1100,735.0 C1379.0,735.0 1379.0,675.5 1658,675.5" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_08 e_S2_15" d="M850,661.0 C890,661.0 868,809.0 908,809.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_03 e_S2_16" d="M600,661.0 C1254.0,661.0 1254.0,641.7 1908,641.7" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_06 e_S2_16" d="M1100,947.3 C1504.0,947.3 1504.0,680.3 1908,680.3" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_07 e_S2_16" d="M1350,809.0 C1629.0,809.0 1629.0,661.0 1908,661.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_14 e_S2_16" d="M1850,661.0 C1890,661.0 1868,651.3 1908,651.3" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_15 e_S2_16" d="M1100,809.0 C1504.0,809.0 1504.0,670.7 1908,670.7" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_M3 e_S2_17" d="M600,436.7 C1379.0,436.7 1379.0,651.3 2158,651.3" fill="none" stroke="#B8860B" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_M)"/>
+<path class="edge e_S2_16 e_S2_17" d="M2100,646.5 C2140,646.5 2118,670.7 2158,670.7" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_16 e_S2_18" d="M2100,661.0 C2140,661.0 2118,735.0 2158,735.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_17 e_S2_19" d="M2350,646.5 C2390,646.5 2368,651.3 2408,651.3" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_18 e_S2_19" d="M2350,735.0 C2390,735.0 2368,670.7 2408,670.7" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_08 e_S3_01" d="M850,670.7 C890,670.7 868,1043.0 908,1043.0" fill="none" stroke="#1565C0" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S2)"/>
+<path class="edge e_S3_01 e_S3_02" d="M1100,1043.0 C1140,1043.0 1118,1043.0 1158,1043.0" fill="none" stroke="#00796B" stroke-width="1.6" marker-end="url(#a_S3)"/>
+<path class="edge e_S3_02 e_S3_03" d="M1350,1033.3 C1754.0,1033.3 1754.0,1052.7 2158,1052.7" fill="none" stroke="#00796B" stroke-width="1.6" marker-end="url(#a_S3)"/>
+<path class="edge e_S2_16 e_S3_03" d="M2100,675.5 C2140,675.5 2118,1033.3 2158,1033.3" fill="none" stroke="#1565C0" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S2)"/>
+<path class="edge e_S3_02 e_S3_04" d="M1350,1052.7 C1390,1052.7 1368,1043.0 1408,1043.0" fill="none" stroke="#00796B" stroke-width="1.6" marker-end="url(#a_S3)"/>
+<path class="edge e_S3_04 e_S3_05" d="M1600,1033.3 C1640,1033.3 1618,1052.7 1658,1052.7" fill="none" stroke="#00796B" stroke-width="1.6" marker-end="url(#a_S3)"/>
+<path class="edge e_M2 e_S3_05" d="M600,362.7 C1129.0,362.7 1129.0,1033.3 1658,1033.3" fill="none" stroke="#B8860B" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_M)"/>
+<path class="edge e_S3_03 e_S3_06" d="M2350,1033.3 C2390,1033.3 2368,1033.3 2408,1033.3" fill="none" stroke="#00796B" stroke-width="1.6" marker-end="url(#a_S3)"/>
+<path class="edge e_S3_04 e_S3_06" d="M1600,1052.7 C2004.0,1052.7 2004.0,1052.7 2408,1052.7" fill="none" stroke="#00796B" stroke-width="1.6" marker-end="url(#a_S3)"/>
+<path class="edge e_S3_03 e_S3_07" d="M2350,1052.7 C2390,1052.7 2368,1117.0 2408,1117.0" fill="none" stroke="#00796B" stroke-width="1.6" marker-end="url(#a_S3)"/>
+<path class="edge e_S3_05 e_S3_08" d="M1850,1043.0 C2254.0,1043.0 2254.0,1028.5 2658,1028.5" fill="none" stroke="#00796B" stroke-width="1.6" marker-end="url(#a_S3)"/>
+<path class="edge e_S3_06 e_S3_08" d="M2600,1033.3 C2640,1033.3 2618,1043.0 2658,1043.0" fill="none" stroke="#00796B" stroke-width="1.6" marker-end="url(#a_S3)"/>
+<path class="edge e_S3_07 e_S3_08" d="M2600,1117.0 C2640,1117.0 2618,1057.5 2658,1057.5" fill="none" stroke="#00796B" stroke-width="1.6" marker-end="url(#a_S3)"/>
+<path class="edge e_S2_08 e_S4_01" d="M850,680.3 C890,680.3 868,1203.0 908,1203.0" fill="none" stroke="#1565C0" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S2)"/>
+<path class="edge e_S4_01 e_S4_02" d="M1100,1193.3 C1140,1193.3 1118,1203.0 1158,1203.0" fill="none" stroke="#6A1B9A" stroke-width="1.6" marker-end="url(#a_S4)"/>
+<path class="edge e_S4_02 e_S4_03" d="M1350,1203.0 C1390,1203.0 1368,1203.0 1408,1203.0" fill="none" stroke="#6A1B9A" stroke-width="1.6" marker-end="url(#a_S4)"/>
+<path class="edge e_S4_03 e_S4_04" d="M1600,1193.3 C1640,1193.3 1618,1203.0 1658,1203.0" fill="none" stroke="#6A1B9A" stroke-width="1.6" marker-end="url(#a_S4)"/>
+<path class="edge e_S4_04 e_S4_05" d="M1850,1193.3 C1890,1193.3 1868,1203.0 1908,1203.0" fill="none" stroke="#6A1B9A" stroke-width="1.6" marker-end="url(#a_S4)"/>
+<path class="edge e_S4_05 e_S4_06" d="M2100,1193.3 C2379.0,1193.3 2379.0,1212.7 2658,1212.7" fill="none" stroke="#6A1B9A" stroke-width="1.6" marker-end="url(#a_S4)"/>
+<path class="edge e_S3_06 e_S4_06" d="M2600,1052.7 C2640,1052.7 2618,1193.3 2658,1193.3" fill="none" stroke="#00796B" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S3)"/>
+<path class="edge e_S4_06 e_S4_07" d="M2850,1203.0 C2890,1203.0 2868,1203.0 2908,1203.0" fill="none" stroke="#6A1B9A" stroke-width="1.6" marker-end="url(#a_S4)"/>
+<path class="edge e_S4_05 e_S4_08" d="M2100,1212.7 C2140,1212.7 2118,1203.0 2158,1203.0" fill="none" stroke="#6A1B9A" stroke-width="1.6" marker-end="url(#a_S4)"/>
+<path class="edge e_S4_07 e_S4_09" d="M3100,1193.3 C3140,1193.3 3118,1193.3 3158,1193.3" fill="none" stroke="#6A1B9A" stroke-width="1.6" marker-end="url(#a_S4)"/>
+<path class="edge e_S4_08 e_S4_09" d="M2350,1183.7 C2754.0,1183.7 2754.0,1212.7 3158,1212.7" fill="none" stroke="#6A1B9A" stroke-width="1.6" marker-end="url(#a_S4)"/>
+<path class="edge e_S4_01 e_S5_01" d="M1100,1212.7 C1140,1212.7 1118,1363.0 1158,1363.0" fill="none" stroke="#6A1B9A" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S4)"/>
+<path class="edge e_S5_01 e_S5_02" d="M1350,1363.0 C1504.0,1363.0 1504.0,1298.7 1658,1298.7" fill="none" stroke="#E65100" stroke-width="1.6" marker-end="url(#a_S5)"/>
+<path class="edge e_S4_03 e_S5_02" d="M1600,1212.7 C1640,1212.7 1618,1279.3 1658,1279.3" fill="none" stroke="#6A1B9A" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S4)"/>
+<path class="edge e_S5_02 e_S5_03" d="M1850,1268.3 C2129.0,1268.3 2129.0,1298.7 2408,1298.7" fill="none" stroke="#E65100" stroke-width="1.6" marker-end="url(#a_S5)"/>
+<path class="edge e_S4_08 e_S5_03" d="M2350,1193.3 C2390,1193.3 2368,1279.3 2408,1279.3" fill="none" stroke="#6A1B9A" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S4)"/>
+<path class="edge e_S5_02 e_S5_04" d="M1850,1293.1 C2129.0,1293.1 2129.0,1372.7 2408,1372.7" fill="none" stroke="#E65100" stroke-width="1.6" marker-end="url(#a_S5)"/>
+<path class="edge e_S4_08 e_S5_04" d="M2350,1203.0 C2390,1203.0 2368,1353.3 2408,1353.3" fill="none" stroke="#6A1B9A" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S4)"/>
+<path class="edge e_S5_02 e_S5_05" d="M1850,1301.4 C2129.0,1301.4 2129.0,1446.7 2408,1446.7" fill="none" stroke="#E65100" stroke-width="1.6" marker-end="url(#a_S5)"/>
+<path class="edge e_S4_08 e_S5_05" d="M2350,1212.7 C2390,1212.7 2368,1427.3 2408,1427.3" fill="none" stroke="#6A1B9A" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S4)"/>
+<path class="edge e_S5_02 e_S5_06" d="M1850,1276.6 C2504.0,1276.6 2504.0,1298.7 3158,1298.7" fill="none" stroke="#E65100" stroke-width="1.6" marker-end="url(#a_S5)"/>
+<path class="edge e_S4_07 e_S5_06" d="M3100,1212.7 C3140,1212.7 3118,1279.3 3158,1279.3" fill="none" stroke="#6A1B9A" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S4)"/>
+<path class="edge e_S5_02 e_S5_07" d="M1850,1309.7 C2129.0,1309.7 2129.0,1520.7 2408,1520.7" fill="none" stroke="#E65100" stroke-width="1.6" marker-end="url(#a_S5)"/>
+<path class="edge e_S4_08 e_S5_07" d="M2350,1222.3 C2390,1222.3 2368,1501.3 2408,1501.3" fill="none" stroke="#6A1B9A" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S4)"/>
+<path class="edge e_S5_02 e_S5_08" d="M1850,1284.9 C1890,1284.9 1868,1298.7 1908,1298.7" fill="none" stroke="#E65100" stroke-width="1.6" marker-end="url(#a_S5)"/>
+<path class="edge e_S4_04 e_S5_08" d="M1850,1212.7 C1890,1212.7 1868,1279.3 1908,1279.3" fill="none" stroke="#6A1B9A" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S4)"/>
+<path class="edge e_S2_02 e_S5_09" d="M1100,892.7 C1140,892.7 1118,1289.0 1158,1289.0" fill="none" stroke="#1565C0" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S2)"/>
+<path class="edge e_S5_03 e_S5_10" d="M2600,1289.0 C3004.0,1289.0 3004.0,1267.2 3408,1267.2" fill="none" stroke="#E65100" stroke-width="1.6" marker-end="url(#a_S5)"/>
+<path class="edge e_S5_04 e_S5_10" d="M2600,1363.0 C3004.0,1363.0 3004.0,1296.2 3408,1296.2" fill="none" stroke="#E65100" stroke-width="1.6" marker-end="url(#a_S5)"/>
+<path class="edge e_S5_05 e_S5_10" d="M2600,1437.0 C3004.0,1437.0 3004.0,1303.5 3408,1303.5" fill="none" stroke="#E65100" stroke-width="1.6" marker-end="url(#a_S5)"/>
+<path class="edge e_S5_06 e_S5_10" d="M3350,1289.0 C3390,1289.0 3368,1274.5 3408,1274.5" fill="none" stroke="#E65100" stroke-width="1.6" marker-end="url(#a_S5)"/>
+<path class="edge e_S5_07 e_S5_10" d="M2600,1511.0 C3004.0,1511.0 3004.0,1310.8 3408,1310.8" fill="none" stroke="#E65100" stroke-width="1.6" marker-end="url(#a_S5)"/>
+<path class="edge e_S5_08 e_S5_10" d="M2100,1289.0 C2754.0,1289.0 2754.0,1281.8 3408,1281.8" fill="none" stroke="#E65100" stroke-width="1.6" marker-end="url(#a_S5)"/>
+<path class="edge e_S5_09 e_S5_10" d="M1350,1289.0 C2379.0,1289.0 2379.0,1289.0 3408,1289.0" fill="none" stroke="#E65100" stroke-width="1.6" marker-end="url(#a_S5)"/>
+<path class="edge e_S2_17 e_S6_01" d="M2350,661.0 C2390,661.0 2368,1597.0 2408,1597.0" fill="none" stroke="#1565C0" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_06 e_S6_02" d="M1100,966.7 C1140,966.7 1118,1597.0 1158,1597.0" fill="none" stroke="#1565C0" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_17 e_S6_03" d="M2350,675.5 C2390,675.5 2368,1671.0 2408,1671.0" fill="none" stroke="#1565C0" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S2)"/>
+<path class="edge e_S4_09 e_S6_04" d="M3350,1203.0 C3504.0,1203.0 3504.0,1587.3 3658,1587.3" fill="none" stroke="#6A1B9A" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S4)"/>
+<path class="edge e_S5_10 e_S6_04" d="M3600,1289.0 C3640,1289.0 3618,1606.7 3658,1606.7" fill="none" stroke="#E65100" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S5)"/>
+<path class="edge e_S6_01 e_S6_05" d="M2600,1597.0 C3254.0,1597.0 3254.0,1579.6 3908,1579.6" fill="none" stroke="#455A64" stroke-width="1.6" marker-end="url(#a_S6)"/>
+<path class="edge e_S6_02 e_S6_05" d="M1350,1597.0 C2629.0,1597.0 2629.0,1591.2 3908,1591.2" fill="none" stroke="#455A64" stroke-width="1.6" marker-end="url(#a_S6)"/>
+<path class="edge e_S6_03 e_S6_05" d="M2600,1671.0 C3254.0,1671.0 3254.0,1614.4 3908,1614.4" fill="none" stroke="#455A64" stroke-width="1.6" marker-end="url(#a_S6)"/>
+<path class="edge e_S6_04 e_S6_05" d="M3850,1597.0 C3890,1597.0 3868,1602.8 3908,1602.8" fill="none" stroke="#455A64" stroke-width="1.6" marker-end="url(#a_S6)"/>
+<g id="n_S1" class="node nb_M1 nb_M2 nb_M3 nb_M4 nb_M6 nb_S2_03 nb_S2_04">
+<title>S1 #4: Stage 1: foundations</title>
+<rect x="160" y="164" width="190" height="58" rx="8" fill="#C8E6C9" stroke="#2E7D32" stroke-width="1.2"/>
+<text x="170" y="182" font-size="13" font-weight="700" fill="#2E7D32">S1  #4  ✓</text>
+<text x="170" y="199" font-size="11.5" fill="#323F4B">Stage 1: foundations</text>
+</g>
+<g id="n_M1" class="node nb_S1 nb_S2_08">
+<title>M1 #10: Pin ruff and pytest to exact versions</title>
+<rect x="410" y="250" width="190" height="58" rx="8" fill="#FFF3C4" stroke="#B8860B" stroke-width="1.2"/>
+<text x="420" y="268" font-size="13" font-weight="700" fill="#B8860B">M1  #10  ✓</text>
+<text x="420" y="285" font-size="11.5" fill="#323F4B">Pin ruff and pytest to exact</text>
+<text x="420" y="299" font-size="11.5" fill="#323F4B">versions</text>
+</g>
+<g id="n_M2" class="node nb_S1 nb_S2_01 nb_S3_05">
+<title>M2 #11: Strict YAML loading: refuse duplicate keys</title>
+<rect x="410" y="324" width="190" height="58" rx="8" fill="#FFF3C4" stroke="#B8860B" stroke-width="3.2"/>
+<text x="420" y="342" font-size="13" font-weight="700" fill="#B8860B">M2  #11</text>
+<text x="420" y="359" font-size="11.5" fill="#323F4B">Strict YAML loading: refuse</text>
+<text x="420" y="373" font-size="11.5" fill="#323F4B">duplicate keys</text>
+</g>
+<g id="n_M3" class="node nb_M5 nb_S1 nb_S2_17">
+<title>M3 #12: Give bad settings its own exit code</title>
+<rect x="410" y="398" width="190" height="58" rx="8" fill="#FFF3C4" stroke="#B8860B" stroke-width="3.2"/>
+<text x="420" y="416" font-size="13" font-weight="700" fill="#B8860B">M3  #12</text>
+<text x="420" y="433" font-size="11.5" fill="#323F4B">Give bad settings its own</text>
+<text x="420" y="447" font-size="11.5" fill="#323F4B">exit code</text>
+</g>
+<g id="n_M4" class="node nb_S1">
+<title>M4 #13: Make the bus concurrency test able to fail</title>
+<rect x="410" y="472" width="190" height="58" rx="8" fill="#FFF3C4" stroke="#B8860B" stroke-width="3.2"/>
+<text x="420" y="490" font-size="13" font-weight="700" fill="#B8860B">M4  #13</text>
+<text x="420" y="507" font-size="11.5" fill="#323F4B">Make the bus concurrency test</text>
+<text x="420" y="521" font-size="11.5" fill="#323F4B">able to fail</text>
+</g>
+<g id="n_M6" class="node nb_S1">
+<title>M6 #15: Fix the outdated sentence in agent/README.md</title>
+<rect x="410" y="546" width="190" height="58" rx="8" fill="#FFF3C4" stroke="#B8860B" stroke-width="3.2"/>
+<text x="420" y="564" font-size="13" font-weight="700" fill="#B8860B">M6  #15</text>
+<text x="420" y="581" font-size="11.5" fill="#323F4B">Fix the outdated sentence in</text>
+<text x="420" y="595" font-size="11.5" fill="#323F4B">agent/README.md</text>
+</g>
+<g id="n_S2_03" class="node nb_S1 nb_S2_16">
+<title>S2-03 #18: App index from the Start Menu</title>
+<rect x="410" y="632" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="3.2"/>
+<text x="420" y="650" font-size="13" font-weight="700" fill="#1565C0">S2-03  #18</text>
+<text x="420" y="667" font-size="11.5" fill="#323F4B">App index from the Start Menu</text>
+</g>
+<g id="n_S2_04" class="node nb_S1 nb_S2_05">
+<title>S2-04 #19: Primitive registry and app/URL primitives</title>
+<rect x="410" y="706" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="3.2"/>
+<text x="420" y="724" font-size="13" font-weight="700" fill="#1565C0">S2-04  #19</text>
+<text x="420" y="741" font-size="11.5" fill="#323F4B">Primitive registry and</text>
+<text x="420" y="755" font-size="11.5" fill="#323F4B">app/URL primitives</text>
+</g>
+<g id="n_M5" class="node nb_M3">
+<title>M5 #14: Automated tests for run_agent: Ctrl+C and fatal stop</title>
+<rect x="660" y="250" width="190" height="58" rx="8" fill="#FFF3C4" stroke="#B8860B" stroke-width="1.2"/>
+<text x="670" y="268" font-size="13" font-weight="700" fill="#B8860B">M5  #14</text>
+<text x="670" y="285" font-size="11.5" fill="#323F4B">Automated tests for</text>
+<text x="670" y="299" font-size="11.5" fill="#323F4B">run_agent: Ctrl+C and fata...</text>
+</g>
+<g id="n_S2_08" class="node nb_M1 nb_S2_09 nb_S2_13 nb_S2_15 nb_S3_01 nb_S4_01">
+<title>S2-08 #23: Switch from pip + venv to uv</title>
+<rect x="660" y="632" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="3.2"/>
+<text x="670" y="650" font-size="13" font-weight="700" fill="#1565C0">S2-08  #23</text>
+<text x="670" y="667" font-size="11.5" fill="#323F4B">Switch from pip + venv to uv</text>
+</g>
+<g id="n_S2_01" class="node nb_M2 nb_S2_02">
+<title>S2-01 #16: Command files and the recipe schema</title>
+<rect x="660" y="706" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="1.2"/>
+<text x="670" y="724" font-size="13" font-weight="700" fill="#1565C0">S2-01  #16</text>
+<text x="670" y="741" font-size="11.5" fill="#323F4B">Command files and the recipe</text>
+<text x="670" y="755" font-size="11.5" fill="#323F4B">schema</text>
+</g>
+<g id="n_S2_05" class="node nb_S2_04 nb_S2_06">
+<title>S2-05 #20: Volume and key primitives</title>
+<rect x="660" y="780" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="1.2"/>
+<text x="670" y="798" font-size="13" font-weight="700" fill="#1565C0">S2-05  #20</text>
+<text x="670" y="815" font-size="11.5" fill="#323F4B">Volume and key primitives</text>
+</g>
+<g id="n_S2_09" class="node nb_S2_08 nb_S2_10 nb_S2_11">
+<title>S2-09 #24: Audio capture, VAD and microphone following</title>
+<rect x="910" y="632" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="1.2"/>
+<text x="920" y="650" font-size="13" font-weight="700" fill="#1565C0">S2-09  #24</text>
+<text x="920" y="667" font-size="11.5" fill="#323F4B">Audio capture, VAD and</text>
+<text x="920" y="681" font-size="11.5" fill="#323F4B">microphone following</text>
+</g>
+<g id="n_S2_13" class="node nb_S2_08 nb_S2_14">
+<title>S2-13 #28: Hotkeys: push-to-talk and continuous toggle</title>
+<rect x="910" y="706" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="1.2"/>
+<text x="920" y="724" font-size="13" font-weight="700" fill="#1565C0">S2-13  #28</text>
+<text x="920" y="741" font-size="11.5" fill="#323F4B">Hotkeys: push-to-talk and</text>
+<text x="920" y="755" font-size="11.5" fill="#323F4B">continuous toggle</text>
+</g>
+<g id="n_S2_15" class="node nb_S2_08 nb_S2_16">
+<title>S2-15 #30: Feedback: chimes, pop-ups and ducking</title>
+<rect x="910" y="780" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="1.2"/>
+<text x="920" y="798" font-size="13" font-weight="700" fill="#1565C0">S2-15  #30</text>
+<text x="920" y="815" font-size="11.5" fill="#323F4B">Feedback: chimes, pop-ups and</text>
+<text x="920" y="829" font-size="11.5" fill="#323F4B">ducking</text>
+</g>
+<g id="n_S2_02" class="node nb_S2_01 nb_S2_07 nb_S5_09">
+<title>S2-02 #17: Normaliser and matcher</title>
+<rect x="910" y="854" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="1.2"/>
+<text x="920" y="872" font-size="13" font-weight="700" fill="#1565C0">S2-02  #17</text>
+<text x="920" y="889" font-size="11.5" fill="#323F4B">Normaliser and matcher</text>
+</g>
+<g id="n_S2_06" class="node nb_S2_05 nb_S2_16 nb_S6_02">
+<title>S2-06 #21: Executor, undo and routines</title>
+<rect x="910" y="928" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="1.2"/>
+<text x="920" y="946" font-size="13" font-weight="700" fill="#1565C0">S2-06  #21</text>
+<text x="920" y="963" font-size="11.5" fill="#323F4B">Executor, undo and routines</text>
+</g>
+<g id="n_S3_01" class="node nb_S2_08 nb_S3_02">
+<title>S3-01 #35: Storage engine: SQLite, migrations and recovery</title>
+<rect x="910" y="1014" width="190" height="58" rx="8" fill="#D5F0EC" stroke="#00796B" stroke-width="1.2"/>
+<text x="920" y="1032" font-size="13" font-weight="700" fill="#00796B">S3-01  #35</text>
+<text x="920" y="1049" font-size="11.5" fill="#323F4B">Storage engine: SQLite,</text>
+<text x="920" y="1063" font-size="11.5" fill="#323F4B">migrations and recovery</text>
+</g>
+<g id="n_S4_01" class="node nb_S2_08 nb_S4_02 nb_S5_01">
+<title>S4-01 #43: Server scaffolding and the CI server job</title>
+<rect x="910" y="1174" width="190" height="58" rx="8" fill="#E8DDF5" stroke="#6A1B9A" stroke-width="1.2"/>
+<text x="920" y="1192" font-size="13" font-weight="700" fill="#6A1B9A">S4-01  #43</text>
+<text x="920" y="1209" font-size="11.5" fill="#323F4B">Server scaffolding and the CI</text>
+<text x="920" y="1223" font-size="11.5" fill="#323F4B">server job</text>
+</g>
+<g id="n_S2_10" class="node nb_S2_09 nb_S2_14">
+<title>S2-10 #25: Wake word (Hey Jarvis)</title>
+<rect x="1160" y="632" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="1.2"/>
+<text x="1170" y="650" font-size="13" font-weight="700" fill="#1565C0">S2-10  #25</text>
+<text x="1170" y="667" font-size="11.5" fill="#323F4B">Wake word (Hey Jarvis)</text>
+</g>
+<g id="n_S2_11" class="node nb_S2_09 nb_S2_12">
+<title>S2-11 #26: listen record-tests: the owner's voice clips</title>
+<rect x="1160" y="706" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="1.2"/>
+<text x="1170" y="724" font-size="13" font-weight="700" fill="#1565C0">S2-11  #26</text>
+<text x="1170" y="741" font-size="11.5" fill="#323F4B">listen record-tests: the</text>
+<text x="1170" y="755" font-size="11.5" fill="#323F4B">owner's voice clips</text>
+</g>
+<g id="n_S2_07" class="node nb_S2_02 nb_S2_16">
+<title>S2-07 #22: Confidence thresholds, risk and continuous-mode guardrails</title>
+<rect x="1160" y="780" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="1.2"/>
+<text x="1170" y="798" font-size="13" font-weight="700" fill="#1565C0">S2-07  #22</text>
+<text x="1170" y="815" font-size="11.5" fill="#323F4B">Confidence thresholds, risk</text>
+<text x="1170" y="829" font-size="11.5" fill="#323F4B">and continuous-mode...</text>
+</g>
+<g id="n_S3_02" class="node nb_S3_01 nb_S3_03 nb_S3_04">
+<title>S3-02 #36: The local tables</title>
+<rect x="1160" y="1014" width="190" height="58" rx="8" fill="#D5F0EC" stroke="#00796B" stroke-width="1.2"/>
+<text x="1170" y="1032" font-size="13" font-weight="700" fill="#00796B">S3-02  #36</text>
+<text x="1170" y="1049" font-size="11.5" fill="#323F4B">The local tables</text>
+</g>
+<g id="n_S4_02" class="node nb_S4_01 nb_S4_03">
+<title>S4-02 #44: Server database: models and migrations</title>
+<rect x="1160" y="1174" width="190" height="58" rx="8" fill="#E8DDF5" stroke="#6A1B9A" stroke-width="1.2"/>
+<text x="1170" y="1192" font-size="13" font-weight="700" fill="#6A1B9A">S4-02  #44</text>
+<text x="1170" y="1209" font-size="11.5" fill="#323F4B">Server database: models and</text>
+<text x="1170" y="1223" font-size="11.5" fill="#323F4B">migrations</text>
+</g>
+<g id="n_S5_09" class="node nb_S2_02 nb_S5_10">
+<title>S5-09 #60: AI command builder on the laptop (Gemini)</title>
+<rect x="1160" y="1260" width="190" height="58" rx="8" fill="#FDE3CC" stroke="#E65100" stroke-width="1.2"/>
+<text x="1170" y="1278" font-size="13" font-weight="700" fill="#E65100">S5-09  #60</text>
+<text x="1170" y="1295" font-size="11.5" fill="#323F4B">AI command builder on the</text>
+<text x="1170" y="1309" font-size="11.5" fill="#323F4B">laptop (Gemini)</text>
+</g>
+<g id="n_S5_01" class="node nb_S4_01 nb_S5_02">
+<title>S5-01 #52: Web app scaffolding, themes, Dock and the CI web job</title>
+<rect x="1160" y="1334" width="190" height="58" rx="8" fill="#FDE3CC" stroke="#E65100" stroke-width="1.2"/>
+<text x="1170" y="1352" font-size="13" font-weight="700" fill="#E65100">S5-01  #52</text>
+<text x="1170" y="1369" font-size="11.5" fill="#323F4B">Web app scaffolding, themes,</text>
+<text x="1170" y="1383" font-size="11.5" fill="#323F4B">Dock and the CI web job</text>
+</g>
+<g id="n_S6_02" class="node nb_S2_06 nb_S6_05">
+<title>S6-02 #63: Chrome profiles in routines</title>
+<rect x="1160" y="1568" width="190" height="58" rx="8" fill="#E3E7EB" stroke="#455A64" stroke-width="1.2"/>
+<text x="1170" y="1586" font-size="13" font-weight="700" fill="#455A64">S6-02  #63</text>
+<text x="1170" y="1603" font-size="11.5" fill="#323F4B">Chrome profiles in routines</text>
+</g>
+<g id="n_S2_12" class="node nb_S2_11 nb_S2_14">
+<title>S2-12 #27: Transcriber and model benchmark</title>
+<rect x="1410" y="632" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="1.2"/>
+<text x="1420" y="650" font-size="13" font-weight="700" fill="#1565C0">S2-12  #27</text>
+<text x="1420" y="667" font-size="11.5" fill="#323F4B">Transcriber and model</text>
+<text x="1420" y="681" font-size="11.5" fill="#323F4B">benchmark</text>
+</g>
+<g id="n_S3_04" class="node nb_S3_02 nb_S3_05 nb_S3_06">
+<title>S3-04 #38: Usage tracker: which app is in front</title>
+<rect x="1410" y="1014" width="190" height="58" rx="8" fill="#D5F0EC" stroke="#00796B" stroke-width="1.2"/>
+<text x="1420" y="1032" font-size="13" font-weight="700" fill="#00796B">S3-04  #38</text>
+<text x="1420" y="1049" font-size="11.5" fill="#323F4B">Usage tracker: which app is</text>
+<text x="1420" y="1063" font-size="11.5" fill="#323F4B">in front</text>
+</g>
+<g id="n_S4_03" class="node nb_S4_02 nb_S4_04 nb_S5_02">
+<title>S4-03 #45: Authentication: login, sessions, lock-out</title>
+<rect x="1410" y="1174" width="190" height="58" rx="8" fill="#E8DDF5" stroke="#6A1B9A" stroke-width="1.2"/>
+<text x="1420" y="1192" font-size="13" font-weight="700" fill="#6A1B9A">S4-03  #45</text>
+<text x="1420" y="1209" font-size="11.5" fill="#323F4B">Authentication: login,</text>
+<text x="1420" y="1223" font-size="11.5" fill="#323F4B">sessions, lock-out</text>
+</g>
+<g id="n_S2_14" class="node nb_S2_10 nb_S2_12 nb_S2_13 nb_S2_16">
+<title>S2-14 #29: Listener state machine</title>
+<rect x="1660" y="632" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="1.2"/>
+<text x="1670" y="650" font-size="13" font-weight="700" fill="#1565C0">S2-14  #29</text>
+<text x="1670" y="667" font-size="11.5" fill="#323F4B">Listener state machine</text>
+</g>
+<g id="n_S3_05" class="node nb_M2 nb_S3_04 nb_S3_08">
+<title>S3-05 #39: Sites from browser titles</title>
+<rect x="1660" y="1014" width="190" height="58" rx="8" fill="#D5F0EC" stroke="#00796B" stroke-width="1.2"/>
+<text x="1670" y="1032" font-size="13" font-weight="700" fill="#00796B">S3-05  #39</text>
+<text x="1670" y="1049" font-size="11.5" fill="#323F4B">Sites from browser titles</text>
+</g>
+<g id="n_S4_04" class="node nb_S4_03 nb_S4_05 nb_S5_08">
+<title>S4-04 #46: Devices and device tokens</title>
+<rect x="1660" y="1174" width="190" height="58" rx="8" fill="#E8DDF5" stroke="#6A1B9A" stroke-width="1.2"/>
+<text x="1670" y="1192" font-size="13" font-weight="700" fill="#6A1B9A">S4-04  #46</text>
+<text x="1670" y="1209" font-size="11.5" fill="#323F4B">Devices and device tokens</text>
+</g>
+<g id="n_S5_02" class="node nb_S4_03 nb_S5_01 nb_S5_03 nb_S5_04 nb_S5_05 nb_S5_06 nb_S5_07 nb_S5_08">
+<title>S5-02 #53: Login page and the four page states</title>
+<rect x="1660" y="1260" width="190" height="58" rx="8" fill="#FDE3CC" stroke="#E65100" stroke-width="1.2"/>
+<text x="1670" y="1278" font-size="13" font-weight="700" fill="#E65100">S5-02  #53</text>
+<text x="1670" y="1295" font-size="11.5" fill="#323F4B">Login page and the four page</text>
+<text x="1670" y="1309" font-size="11.5" fill="#323F4B">states</text>
+</g>
+<g id="n_S2_16" class="node nb_S2_03 nb_S2_06 nb_S2_07 nb_S2_14 nb_S2_15 nb_S2_17 nb_S2_18 nb_S3_03">
+<title>S2-16 #31: Wiring it together: intent worker and the full voice path</title>
+<rect x="1910" y="632" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="1.2"/>
+<text x="1920" y="650" font-size="13" font-weight="700" fill="#1565C0">S2-16  #31</text>
+<text x="1920" y="667" font-size="11.5" fill="#323F4B">Wiring it together: intent</text>
+<text x="1920" y="681" font-size="11.5" fill="#323F4B">worker and the full voice...</text>
+</g>
+<g id="n_S4_05" class="node nb_S4_04 nb_S4_06 nb_S4_08">
+<title>S4-05 #47: The sync endpoint</title>
+<rect x="1910" y="1174" width="190" height="58" rx="8" fill="#E8DDF5" stroke="#6A1B9A" stroke-width="1.2"/>
+<text x="1920" y="1192" font-size="13" font-weight="700" fill="#6A1B9A">S4-05  #47</text>
+<text x="1920" y="1209" font-size="11.5" fill="#323F4B">The sync endpoint</text>
+</g>
+<g id="n_S5_08" class="node nb_S4_04 nb_S5_02 nb_S5_10">
+<title>S5-08 #59: Devices and settings page</title>
+<rect x="1910" y="1260" width="190" height="58" rx="8" fill="#FDE3CC" stroke="#E65100" stroke-width="1.2"/>
+<text x="1920" y="1278" font-size="13" font-weight="700" fill="#E65100">S5-08  #59</text>
+<text x="1920" y="1295" font-size="11.5" fill="#323F4B">Devices and settings page</text>
+</g>
+<g id="n_S2_17" class="node nb_M3 nb_S2_16 nb_S2_19 nb_S6_01 nb_S6_03">
+<title>S2-17 #32: Launcher: restart after a crash, one copy only</title>
+<rect x="2160" y="632" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="1.2"/>
+<text x="2170" y="650" font-size="13" font-weight="700" fill="#1565C0">S2-17  #32</text>
+<text x="2170" y="667" font-size="11.5" fill="#323F4B">Launcher: restart after a</text>
+<text x="2170" y="681" font-size="11.5" fill="#323F4B">crash, one copy only</text>
+</g>
+<g id="n_S2_18" class="node nb_S2_16 nb_S2_19">
+<title>S2-18 #33: listen debug on: spoken words in the log until restart</title>
+<rect x="2160" y="706" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="1.2"/>
+<text x="2170" y="724" font-size="13" font-weight="700" fill="#1565C0">S2-18  #33</text>
+<text x="2170" y="741" font-size="11.5" fill="#323F4B">listen debug on: spoken words</text>
+<text x="2170" y="755" font-size="11.5" fill="#323F4B">in the log until restart</text>
+</g>
+<g id="n_S3_03" class="node nb_S2_16 nb_S3_02 nb_S3_06 nb_S3_07">
+<title>S3-03 #37: Record every command</title>
+<rect x="2160" y="1014" width="190" height="58" rx="8" fill="#D5F0EC" stroke="#00796B" stroke-width="1.2"/>
+<text x="2170" y="1032" font-size="13" font-weight="700" fill="#00796B">S3-03  #37</text>
+<text x="2170" y="1049" font-size="11.5" fill="#323F4B">Record every command</text>
+</g>
+<g id="n_S4_08" class="node nb_S4_05 nb_S4_09 nb_S5_03 nb_S5_04 nb_S5_05 nb_S5_07">
+<title>S4-08 #50: Analytics and history endpoints</title>
+<rect x="2160" y="1174" width="190" height="58" rx="8" fill="#E8DDF5" stroke="#6A1B9A" stroke-width="1.2"/>
+<text x="2170" y="1192" font-size="13" font-weight="700" fill="#6A1B9A">S4-08  #50</text>
+<text x="2170" y="1209" font-size="11.5" fill="#323F4B">Analytics and history</text>
+<text x="2170" y="1223" font-size="11.5" fill="#323F4B">endpoints</text>
+</g>
+<g id="n_S2_19" class="node nb_S2_17 nb_S2_18">
+<title>S2-19 #34: Learning Doc 11 and stage 2 sign-off</title>
+<rect x="2410" y="632" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="1.2"/>
+<text x="2420" y="650" font-size="13" font-weight="700" fill="#1565C0">S2-19  #34</text>
+<text x="2420" y="667" font-size="11.5" fill="#323F4B">Learning Doc 11 and stage 2</text>
+<text x="2420" y="681" font-size="11.5" fill="#323F4B">sign-off</text>
+</g>
+<g id="n_S3_06" class="node nb_S3_03 nb_S3_04 nb_S3_08 nb_S4_06">
+<title>S3-06 #40: Roll-up and purge</title>
+<rect x="2410" y="1014" width="190" height="58" rx="8" fill="#D5F0EC" stroke="#00796B" stroke-width="1.2"/>
+<text x="2420" y="1032" font-size="13" font-weight="700" fill="#00796B">S3-06  #40</text>
+<text x="2420" y="1049" font-size="11.5" fill="#323F4B">Roll-up and purge</text>
+</g>
+<g id="n_S3_07" class="node nb_S3_03 nb_S3_08">
+<title>S3-07 #41: Review list and that's wrong</title>
+<rect x="2410" y="1088" width="190" height="58" rx="8" fill="#D5F0EC" stroke="#00796B" stroke-width="1.2"/>
+<text x="2420" y="1106" font-size="13" font-weight="700" fill="#00796B">S3-07  #41</text>
+<text x="2420" y="1123" font-size="11.5" fill="#323F4B">Review list and that's wrong</text>
+</g>
+<g id="n_S5_03" class="node nb_S4_08 nb_S5_02 nb_S5_10">
+<title>S5-03 #54: Overview page</title>
+<rect x="2410" y="1260" width="190" height="58" rx="8" fill="#FDE3CC" stroke="#E65100" stroke-width="1.2"/>
+<text x="2420" y="1278" font-size="13" font-weight="700" fill="#E65100">S5-03  #54</text>
+<text x="2420" y="1295" font-size="11.5" fill="#323F4B">Overview page</text>
+</g>
+<g id="n_S5_04" class="node nb_S4_08 nb_S5_02 nb_S5_10">
+<title>S5-04 #55: History page</title>
+<rect x="2410" y="1334" width="190" height="58" rx="8" fill="#FDE3CC" stroke="#E65100" stroke-width="1.2"/>
+<text x="2420" y="1352" font-size="13" font-weight="700" fill="#E65100">S5-04  #55</text>
+<text x="2420" y="1369" font-size="11.5" fill="#323F4B">History page</text>
+</g>
+<g id="n_S5_05" class="node nb_S4_08 nb_S5_02 nb_S5_10">
+<title>S5-05 #56: App usage page</title>
+<rect x="2410" y="1408" width="190" height="58" rx="8" fill="#FDE3CC" stroke="#E65100" stroke-width="1.2"/>
+<text x="2420" y="1426" font-size="13" font-weight="700" fill="#E65100">S5-05  #56</text>
+<text x="2420" y="1443" font-size="11.5" fill="#323F4B">App usage page</text>
+</g>
+<g id="n_S5_07" class="node nb_S4_08 nb_S5_02 nb_S5_10">
+<title>S5-07 #58: Insights page</title>
+<rect x="2410" y="1482" width="190" height="58" rx="8" fill="#FDE3CC" stroke="#E65100" stroke-width="1.2"/>
+<text x="2420" y="1500" font-size="13" font-weight="700" fill="#E65100">S5-07  #58</text>
+<text x="2420" y="1517" font-size="11.5" fill="#323F4B">Insights page</text>
+</g>
+<g id="n_S6_01" class="node nb_S2_17 nb_S6_05">
+<title>S6-01 #62: System tray shell</title>
+<rect x="2410" y="1568" width="190" height="58" rx="8" fill="#E3E7EB" stroke="#455A64" stroke-width="1.2"/>
+<text x="2420" y="1586" font-size="13" font-weight="700" fill="#455A64">S6-01  #62</text>
+<text x="2420" y="1603" font-size="11.5" fill="#323F4B">System tray shell</text>
+</g>
+<g id="n_S6_03" class="node nb_S2_17 nb_S6_05">
+<title>S6-03 #64: Packaging: a real installed app</title>
+<rect x="2410" y="1642" width="190" height="58" rx="8" fill="#E3E7EB" stroke="#455A64" stroke-width="1.2"/>
+<text x="2420" y="1660" font-size="13" font-weight="700" fill="#455A64">S6-03  #64</text>
+<text x="2420" y="1677" font-size="11.5" fill="#323F4B">Packaging: a real installed</text>
+<text x="2420" y="1691" font-size="11.5" fill="#323F4B">app</text>
+</g>
+<g id="n_S3_08" class="node nb_S3_05 nb_S3_06 nb_S3_07">
+<title>S3-08 #42: Learning Doc 12 and stage 3 sign-off</title>
+<rect x="2660" y="1014" width="190" height="58" rx="8" fill="#D5F0EC" stroke="#00796B" stroke-width="1.2"/>
+<text x="2670" y="1032" font-size="13" font-weight="700" fill="#00796B">S3-08  #42</text>
+<text x="2670" y="1049" font-size="11.5" fill="#323F4B">Learning Doc 12 and stage 3</text>
+<text x="2670" y="1063" font-size="11.5" fill="#323F4B">sign-off</text>
+</g>
+<g id="n_S4_06" class="node nb_S3_06 nb_S4_05 nb_S4_07">
+<title>S4-06 #48: Sync client on the laptop</title>
+<rect x="2660" y="1174" width="190" height="58" rx="8" fill="#E8DDF5" stroke="#6A1B9A" stroke-width="1.2"/>
+<text x="2670" y="1192" font-size="13" font-weight="700" fill="#6A1B9A">S4-06  #48</text>
+<text x="2670" y="1209" font-size="11.5" fill="#323F4B">Sync client on the laptop</text>
+</g>
+<g id="n_S4_07" class="node nb_S4_06 nb_S4_09 nb_S5_06">
+<title>S4-07 #49: Command snapshots and pending edits</title>
+<rect x="2910" y="1174" width="190" height="58" rx="8" fill="#E8DDF5" stroke="#6A1B9A" stroke-width="1.2"/>
+<text x="2920" y="1192" font-size="13" font-weight="700" fill="#6A1B9A">S4-07  #49</text>
+<text x="2920" y="1209" font-size="11.5" fill="#323F4B">Command snapshots and pending</text>
+<text x="2920" y="1223" font-size="11.5" fill="#323F4B">edits</text>
+</g>
+<g id="n_S4_09" class="node nb_S4_07 nb_S4_08 nb_S6_04">
+<title>S4-09 #51: Learning Doc 13 and stage 4 sign-off</title>
+<rect x="3160" y="1174" width="190" height="58" rx="8" fill="#E8DDF5" stroke="#6A1B9A" stroke-width="1.2"/>
+<text x="3170" y="1192" font-size="13" font-weight="700" fill="#6A1B9A">S4-09  #51</text>
+<text x="3170" y="1209" font-size="11.5" fill="#323F4B">Learning Doc 13 and stage 4</text>
+<text x="3170" y="1223" font-size="11.5" fill="#323F4B">sign-off</text>
+</g>
+<g id="n_S5_06" class="node nb_S4_07 nb_S5_02 nb_S5_10">
+<title>S5-06 #57: Commands page and the guided form</title>
+<rect x="3160" y="1260" width="190" height="58" rx="8" fill="#FDE3CC" stroke="#E65100" stroke-width="1.2"/>
+<text x="3170" y="1278" font-size="13" font-weight="700" fill="#E65100">S5-06  #57</text>
+<text x="3170" y="1295" font-size="11.5" fill="#323F4B">Commands page and the guided</text>
+<text x="3170" y="1309" font-size="11.5" fill="#323F4B">form</text>
+</g>
+<g id="n_S5_10" class="node nb_S5_03 nb_S5_04 nb_S5_05 nb_S5_06 nb_S5_07 nb_S5_08 nb_S5_09 nb_S6_04">
+<title>S5-10 #61: Learning Doc 14 and stage 5 sign-off</title>
+<rect x="3410" y="1260" width="190" height="58" rx="8" fill="#FDE3CC" stroke="#E65100" stroke-width="1.2"/>
+<text x="3420" y="1278" font-size="13" font-weight="700" fill="#E65100">S5-10  #61</text>
+<text x="3420" y="1295" font-size="11.5" fill="#323F4B">Learning Doc 14 and stage 5</text>
+<text x="3420" y="1309" font-size="11.5" fill="#323F4B">sign-off</text>
+</g>
+<g id="n_S6_04" class="node nb_S4_09 nb_S5_10 nb_S6_05">
+<title>S6-04 #65: Deployment: server and web app online</title>
+<rect x="3660" y="1568" width="190" height="58" rx="8" fill="#E3E7EB" stroke="#455A64" stroke-width="1.2"/>
+<text x="3670" y="1586" font-size="13" font-weight="700" fill="#455A64">S6-04  #65</text>
+<text x="3670" y="1603" font-size="11.5" fill="#323F4B">Deployment: server and web</text>
+<text x="3670" y="1617" font-size="11.5" fill="#323F4B">app online</text>
+</g>
+<g id="n_S6_05" class="node nb_S6_01 nb_S6_02 nb_S6_03 nb_S6_04">
+<title>S6-05 #66: Learning Doc 15 and project sign-off</title>
+<rect x="3910" y="1568" width="190" height="58" rx="8" fill="#E3E7EB" stroke="#455A64" stroke-width="1.2"/>
+<text x="3920" y="1586" font-size="13" font-weight="700" fill="#455A64">S6-05  #66</text>
+<text x="3920" y="1603" font-size="11.5" fill="#323F4B">Learning Doc 15 and project</text>
+<text x="3920" y="1617" font-size="11.5" fill="#323F4B">sign-off</text>
+</g>
+</svg>
