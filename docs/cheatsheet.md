@@ -49,6 +49,10 @@ Options combine: `... -m pytest agent --lf -x -v`.
 
 CI runs the same `ruff check agent` and `pytest agent` on every push.
 
+ruff and pytest are pinned to exact versions in `agent/pyproject.toml`. To upgrade a pinned tool:
+change its version there, reinstall, run ruff and pytest, fix anything new, and merge that as its
+own PR.
+
 ## Git
 
 | Command | What it does |

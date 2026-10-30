@@ -10,7 +10,7 @@ requires-python = ">=3.11"
 dependencies = ["pyyaml>=6.0"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "ruff>=0.6"]
+dev = ["pytest==9.2.0", "ruff==0.17.3"]
 
 [project.scripts]
 listen = "listen_agent.__main__:main"
