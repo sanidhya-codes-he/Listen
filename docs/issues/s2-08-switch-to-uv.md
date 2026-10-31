@@ -26,7 +26,7 @@ before audio.
   `pip install -e "agent[dev]"`. uv reuses the same `agent/.venv` folder, so the old command
   `agent/.venv/Scripts/python -m pytest agent` keeps working (M2-M6 need no changes); `uv sync`
   removes packages that are not in the lock (e.g. the one-off `actionlint-py`)
-- `ci.yml`: replace `setup-python` + pip with `astral-sh/setup-uv@v10` (`version: "0.13.6"`,
+- `ci.yml`: replace `setup-python` + pip with `astral-sh/setup-uv@v10.3.3` (an exact tag: setup-uv publishes no moving `v10` tag; `version: "0.13.6"`,
   `enable-cache: true`, cache keyed on `agent/uv.lock`); then `uv sync --locked --extra dev`
   (`--locked` fails if `uv.lock` is out of date with `pyproject.toml`), `uv run ruff check .`,
   `uv run pytest`, all in `agent/`
