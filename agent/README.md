@@ -7,20 +7,23 @@ The local Listen agent: one Python process (Doc 01, Doc 04).
 
 ## Set up (once)
 
-```
-python -m venv agent/.venv
-agent/.venv/Scripts/python -m pip install -e "agent[dev]"
-```
-
-`-e` (editable) means the installed package points at this folder, so code changes apply without
-reinstalling. In PyCharm, choose `agent/.venv/Scripts/python.exe` as the project interpreter.
-
-## Every day
+Install [uv](https://docs.astral.sh/uv/) (`winget install --id astral-sh.uv`), then in `agent/`:
 
 ```
-agent/.venv/Scripts/python -m pytest agent    # run the tests
-agent/.venv/Scripts/ruff check agent          # lint: likely mistakes and import order
-agent/.venv/Scripts/listen run                # start the agent (Ctrl+C stops it)
+uv sync --extra dev
+```
+
+This creates `agent/.venv` with Python 3.11 (from `.python-version`) and installs exactly the
+versions recorded in `uv.lock`, plus Listen itself in editable mode (code changes apply without
+reinstalling). In PyCharm, choose `agent/.venv/Scripts/python.exe` as the project interpreter.
+
+## Every day (in `agent/`)
+
+```
+uv run pytest            # run the tests
+uv run ruff check .      # lint: likely mistakes and import order
+uv run listen run        # start the agent (Ctrl+C stops it)
+uv add <library>         # add a dependency: updates pyproject.toml and uv.lock, installs it
 ```
 
 All project commands (tests, lint, git, tools): [../docs/cheatsheet.md](../docs/cheatsheet.md).

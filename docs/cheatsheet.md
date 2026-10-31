@@ -1,15 +1,24 @@
 # Listen command cheat sheet
 
-Run everything from the repo folder (`...\Listen`). Commands work in PowerShell and Git Bash.
-`agent/.venv/Scripts/...` is a full path, so it works **without** activating the venv.
+Run everything from the repo folder (`...\Listen`) unless a section says `agent/`. Commands work in
+PowerShell and Git Bash. `agent/.venv/Scripts/...` is a full path, so it works **without**
+activating the venv; inside `agent/`, `uv run <command>` does the same thing more briefly.
 
-## Set up (once, or when `agent/pyproject.toml` changes)
+## Set up and dependencies (uv, run in `agent/`)
 
 | Command | What it does |
 |---|---|
-| `python -m venv agent/.venv` | create the agent's virtual environment |
-| `agent/.venv/Scripts/python -m pip install -e "agent[dev]"` | install Listen (editable) + pytest + ruff; creates `listen.exe` |
+| `winget install --id astral-sh.uv` | install uv itself (once per laptop) |
+| `uv sync --extra dev` | create/update `agent/.venv` from `uv.lock`: Python 3.11 + exact versions + Listen (editable) + `listen.exe` |
+| `uv sync --locked --extra dev` | the same, but fail if `uv.lock` is out of date with `pyproject.toml` (what CI runs) |
+| `uv run pytest` / `uv run ruff check .` / `uv run listen run` | run a command inside `agent/.venv` |
+| `uv add faster-whisper` | add a dependency: edits `pyproject.toml`, updates `uv.lock`, installs it |
+| `uv add --optional dev <tool>` | add a development-only tool to the `[dev]` group |
+| `uv lock --upgrade-package <name>` | move one library to its newest allowed version (then commit `uv.lock`) |
+| `uvx <tool>` | run a tool once without adding it to the project, e.g. `uvx --from actionlint-py actionlint` |
 | `agent\.venv\Scripts\Activate.ps1` | *optional*: put the venv's `Scripts` folder on PATH for this window (`deactivate` undoes it) |
+
+`uv.lock` is committed (it is the exact recipe); `.venv` is not (it is rebuilt from the lock).
 
 ## Run the agent
 
@@ -47,11 +56,11 @@ Options combine: `... -m pytest agent --lf -x -v`.
 | `agent/.venv/Scripts/ruff check agent` | report likely mistakes (rules set in `agent/pyproject.toml`) |
 | `agent/.venv/Scripts/ruff check agent --fix` | report and fix the safe ones (e.g. import order) |
 
-CI runs the same `ruff check agent` and `pytest agent` on every push.
+CI runs the same checks (`uv run ruff check .` and `uv run pytest` in `agent/`) on every push.
 
 ruff and pytest are pinned to exact versions in `agent/pyproject.toml`. To upgrade a pinned tool:
-change its version there, reinstall, run ruff and pytest, fix anything new, and merge that as its
-own PR.
+change its version there, run `uv lock` and `uv sync --extra dev`, run ruff and pytest, fix
+anything new, and merge that as its own PR.
 
 ## Git
 
@@ -71,7 +80,7 @@ own PR.
 
 | Command | What it does |
 |---|---|
-| `agent/.venv/Scripts/actionlint .github/workflows/ci.yml` | check the CI file (`pip install actionlint-py` first) |
+| `uvx --from actionlint-py actionlint .github/workflows/ci.yml` | check the CI file (uv fetches actionlint just for this run) |
 | `latexmk -pdf <doc>.tex` then `latexmk -c <doc>.tex` | build a learning-doc PDF, then remove build leftovers (run in `docs/learning`) |
 | `curl.exe -s <url>` | fetch a URL; in PowerShell type `curl.exe`, plain `curl` is a different command |
 

@@ -5,13 +5,16 @@ on: [push, pull_request]
 jobs:
   agent:
     runs-on: windows-latest          # the agent uses Windows-only libraries
+    defaults:
+      run:
+        working-directory: agent     # every run: step starts inside agent/
     steps:
       - uses: actions/checkout@v4    # copy the repo onto the runner
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v10 # install uv; uv installs the Python from agent/.python-version
         with:
-          python-version: "3.11"
-          cache: pip                 # reuse downloaded libraries between runs
-          cache-dependency-path: agent/pyproject.toml
-      - run: pip install -e "agent[dev]"
-      - run: ruff check agent
-      - run: pytest agent            # speech tests (stage 2) skip: no clips on GitHub
+          version: "0.13.6"          # the same uv as on the laptop
+          enable-cache: true         # reuse downloaded libraries between runs
+          cache-dependency-glob: agent/uv.lock
+      - run: uv sync --locked --extra dev   # exact versions from uv.lock; fails if the lock is stale
+      - run: uv run ruff check .
+      - run: uv run pytest           # speech tests (stage 2) skip: no clips on GitHub
