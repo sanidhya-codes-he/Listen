@@ -1,6 +1,8 @@
 # tests for the publish/subscribe event bus
 import queue
 import threading
+import time
+from collections import defaultdict
 from dataclasses import dataclass
 
 import pytest
@@ -93,19 +95,27 @@ def test_publishing_from_many_threads_loses_nothing(bus):
     assert inbox.qsize() == 8 * 500
 
 
-def test_subscribing_while_others_publish_is_safe(bus):
-    stop = threading.Event()
+def test_threads_subscribing_to_a_new_event_type_at_once_are_all_kept(bus):
+    # the race the lock prevents: several threads find "no list for this type yet", each makes
+    # its own, and each overwrites the last, losing subscribers. Creating a list is normally too
+    # fast to catch, so the test slows it down (a private detail, on purpose); without the lock
+    # only 1 of the 8 inboxes keeps its subscription.
+    def slow_new_list():
+        time.sleep(0.01)
+        return []
 
-    def publish_until_stopped():
-        while not stop.is_set():
-            bus.publish(Ping(0))
+    bus._subscribers = defaultdict(slow_new_list)
+    inboxes = [queue.Queue() for _ in range(8)]
+    start = threading.Barrier(len(inboxes))
 
-    publisher = threading.Thread(target=publish_until_stopped)
-    publisher.start()
-    inboxes = [queue.Queue() for _ in range(200)]
-    for inbox in inboxes:
+    def subscribe(inbox):
+        start.wait()  # all threads subscribe at the same moment
         bus.subscribe(Ping, inbox)
-    stop.set()
-    publisher.join()
+
+    threads = [threading.Thread(target=subscribe, args=(inbox,)) for inbox in inboxes]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
     bus.publish(Ping(1))
-    assert all(not inbox.empty() for inbox in inboxes)
+    assert [inbox.qsize() for inbox in inboxes] == [1] * len(inboxes)
