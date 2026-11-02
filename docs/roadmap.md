@@ -8,7 +8,7 @@ change, regenerate it (ask Claude) rather than editing the diagram by hand.
 **Rule:** before starting any issue, re-read its file and update it to match decisions made since.
 
 ## Ready to start now
-Everything these depend on is done: M2, M3, M4, M6, S2-03, S2-04, S2-08.
+Everything these depend on is done: M3, M4, M6, S2-01, S2-03, S2-04, S2-09, S2-13, S2-15, S3-01, S4-01.
 
 ## The flowchart
 
@@ -202,7 +202,7 @@ Fill in the GitHub number after `gh issue create`; set the status when the issue
 |---|---|---|---|---|---|
 | S1 | Stage 1: foundations | - | [s1-foundations.md](issues/s1-foundations.md) | #4 | done (#1) |
 | M1 | Pin ruff and pytest to exact versions | S1 | [m1-pin-dev-tools.md](issues/m1-pin-dev-tools.md) | #10 | done (#68) |
-| M2 | Strict YAML loading: refuse duplicate keys | S1 | [m2-strict-yaml.md](issues/m2-strict-yaml.md) | #11 | todo |
+| M2 | Strict YAML loading: refuse duplicate keys | S1 | [m2-strict-yaml.md](issues/m2-strict-yaml.md) | #11 | done (#70) |
 | M3 | Give "bad settings" its own exit code | S1 | [m3-exit-codes.md](issues/m3-exit-codes.md) | #12 | todo |
 | M4 | Make the bus concurrency test able to fail | S1 | [m4-bus-concurrency-test.md](issues/m4-bus-concurrency-test.md) | #13 | todo |
 | M5 | Automated tests for `run_agent`: Ctrl+C and fatal stop | S1, M3 | [m5-run-agent-tests.md](issues/m5-run-agent-tests.md) | #14 | todo |
@@ -214,7 +214,7 @@ Fill in the GitHub number after `gh issue create`; set the status when the issue
 | S2-05 | Volume and key primitives | S2-04 | [s2-05-volume-and-keys.md](issues/s2-05-volume-and-keys.md) | #20 | todo |
 | S2-06 | Executor, undo and routines | S2-04, S2-05 | [s2-06-executor-undo-routines.md](issues/s2-06-executor-undo-routines.md) | #21 | todo |
 | S2-07 | Confidence thresholds, risk and continuous-mode guardrails | S2-02 | [s2-07-thresholds.md](issues/s2-07-thresholds.md) | #22 | todo |
-| S2-08 | Switch from pip + venv to uv | M1 | [s2-08-switch-to-uv.md](issues/s2-08-switch-to-uv.md) | #23 | todo |
+| S2-08 | Switch from pip + venv to uv | M1 | [s2-08-switch-to-uv.md](issues/s2-08-switch-to-uv.md) | #23 | done (#69) |
 | S2-09 | Audio capture, VAD and microphone following | S2-08 | [s2-09-audio-capture.md](issues/s2-09-audio-capture.md) | #24 | todo |
 | S2-10 | Wake word ("Hey Jarvis") | S2-09 | [s2-10-wake-word.md](issues/s2-10-wake-word.md) | #25 | todo |
 | S2-11 | `listen record-tests`: the owner's voice clips | S2-09 | [s2-11-record-tests.md](issues/s2-11-record-tests.md) | #26 | todo |

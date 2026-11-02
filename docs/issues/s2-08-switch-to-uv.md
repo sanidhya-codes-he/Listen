@@ -6,7 +6,7 @@
 | Depends on | M1 |
 | Labels | stage-2, agent, ci |
 | Spec | §9.5 (CI) |
-| Status | in progress |
+| Status | **done**: PR #69 |
 
 ## Goal
 Every install, on the laptop and in CI, uses exactly the versions recorded in `agent/uv.lock`.

@@ -6,7 +6,7 @@
 | Depends on | S1 |
 | Labels | stage-2, agent, follow-up |
 | Spec | §3.1 (command files are validated), §11 (settings) |
-| Status | in progress |
+| Status | **done**: PR #70 |
 
 ## Goal
 A YAML file with the same key twice is refused with a message naming the key and line, in
