@@ -4,7 +4,7 @@ from dataclasses import dataclass, field, fields
 from pathlib import Path
 from typing import Any
 
-import yaml
+from listen_agent.core.yamlfile import YamlFileError, load_yaml
 
 MODES = ("wake", "continuous")
 TOP_LEVEL = ("mode", "hotkeys", "thresholds")
@@ -42,14 +42,9 @@ def load_settings(path: Path) -> Settings:
     if not path.exists():
         return Settings()
     try:
-        # utf-8-sig also accepts files saved with a byte-order mark (Notepad does this)
-        text = path.read_text(encoding="utf-8-sig")
-    except (OSError, UnicodeDecodeError) as exc:
-        raise SettingsError(f"{path.name}: can't read it ({exc}); save it as UTF-8") from exc
-    try:
-        raw = yaml.safe_load(text)
-    except yaml.YAMLError as exc:
-        raise SettingsError(f"{path.name}: not valid YAML ({exc})") from exc
+        raw = load_yaml(path)
+    except YamlFileError as exc:
+        raise SettingsError(str(exc)) from exc
     raw = raw or {}
     if not isinstance(raw, dict):
         raise SettingsError(f"{path.name}: expected keys at the top level")

@@ -104,3 +104,10 @@ def test_unreadable_path_stops_with_a_clear_message(tmp_path):
     (tmp_path / "settings.yaml").mkdir()
     with pytest.raises(SettingsError, match="can't read it"):
         load_settings(tmp_path / "settings.yaml")
+
+
+def test_duplicate_key_stops_start_up_naming_its_line(tmp_path):
+    text = "mode: wake\nthresholds:\n  match: 0.8\nthresholds:\n  hearing: 0.5\n"
+    with pytest.raises(SettingsError) as error:
+        load_settings(write(tmp_path, text))
+    assert str(error.value) == "settings.yaml:4: duplicate key 'thresholds'"
