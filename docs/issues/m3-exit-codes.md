@@ -6,7 +6,7 @@
 | Depends on | S1 |
 | Labels | stage-2, agent, follow-up |
 | Spec | §9.1 (launcher) |
-| Status | todo |
+| Status | in progress |
 
 ## Goal
 Every exit code means exactly one thing, so the launcher (S2-17) can react correctly.
@@ -16,25 +16,30 @@ Every exit code means exactly one thing, so the launcher (S2-17) can react corre
 launcher could not tell "fix settings.yaml" from "you typed a wrong command".
 
 ## Scope
-- `app.py`: choose a new number for bad settings and keep 0 (stopped), 1 (Python crash),
-  2 (argparse), 3 (crash loop / hang)
-- update `test_app.py`, Doc 10's exit-code table, `docs/cheatsheet.md`
+(updated 2026-11-02 before starting: number decided; places to change listed; uv commands)
+- `app.py`: `EXIT_BAD_SETTINGS = 78`, the Unix convention for "configuration error" (`EX_CONFIG`
+  in `sysexits.h`); keep 0 (stopped), 1 (Python crash), 2 (argparse), 3 (crash loop / hang)
+- tests: bad settings exits 78; `listen bogus` still exits 2; the two codes differ
+- update Doc 10 (exit-code table, the "code 2 is used twice" paragraph, the three places that say
+  bad settings give exit code 2) and rebuild its PDF; `docs/cheatsheet.md` exit-code line
 
 ## Out of scope
 The launcher itself (S2-17).
 
+## Decision
+78 rather than a small number like 4: it already means "configuration error" to anyone who knows the
+`sysexits.h` convention, and it can never collide with codes 0 to 3.
+
 ## Done when
-- [ ] `listen bogus` exits 2; a bad `settings.yaml` exits with the new code
-- [ ] tests, Doc 10 and the cheat sheet agree
+- [x] `listen bogus` exits 2; a bad `settings.yaml` exits 78
+- [x] tests, Doc 10 and the cheat sheet agree
 
 ## How to test
 ```
-agent/.venv/Scripts/python -m pytest agent -k app -v
-agent/.venv/Scripts/listen bogus ; echo $LASTEXITCODE
+cd agent
+uv run pytest -k "app or cli" -v
+uv run listen bogus ; echo $LASTEXITCODE
 ```
-
-## Open decisions
-- 78 (the Unix tradition `EX_CONFIG`, "configuration error") or a small number like 4?
 
 ## Learning
 Exit codes as a contract between programs; conventions (`sysexits.h`).

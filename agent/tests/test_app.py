@@ -41,3 +41,12 @@ def test_run_agent_refuses_bad_settings(tmp_path):
     assert code == EXIT_BAD_SETTINGS
     assert lines[0].startswith("Can't start: mode:")
     assert "bad settings" in (tmp_path / "logs" / "listen.log").read_text(encoding="utf-8")
+
+
+def test_bad_settings_exit_with_the_configuration_error_code():
+    assert EXIT_BAD_SETTINGS == 78
+
+
+def test_bad_settings_and_bad_command_lines_exit_differently():
+    # argparse exits 2 for a wrong command line; the launcher must tell the two apart
+    assert EXIT_BAD_SETTINGS not in (EXIT_OK, 1, 2, EXIT_FATAL)

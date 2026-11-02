@@ -30,8 +30,8 @@ The three columns do the same thing.
 | `agent/.venv/Scripts/listen --version` | `... -m listen_agent --version` | `listen --version` |
 | `agent/.venv/Scripts/listen --help` | `... -m listen_agent --help` | `listen --help` |
 
-Exit codes: `0` stopped normally, `1` Python crashed, `2` bad command line **or** bad
-`settings.yaml` (to be split before stage 2), `3` crash loop or hang (the launcher restarts).
+Exit codes: `0` stopped normally, `1` Python crashed, `2` bad command line (argparse), `3` crash
+loop or hang (the launcher restarts), `78` bad `settings.yaml` (fix it; restarting would not help).
 
 ## Tests (pytest)
 
