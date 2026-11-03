@@ -108,7 +108,7 @@ You need these ideas. Each gets a few sentences here; the sections that use them
 \noindent What happens when you type \texttt{listen run}:
 \begin{enumerate}[nosep]
   \item The log file \texttt{agent/logs/listen.log} is opened.
-  \item \texttt{agent/settings.yaml} is read and checked; a bad value stops here (exit code 2).
+  \item \texttt{agent/settings.yaml} is read and checked; a bad value stops here (exit code 78).
   \item The \texttt{App} creates the event bus, the workers (in stage 1 only the terminal shell)
         and the supervisor, and starts one thread per worker plus one for the supervisor.
   \item ``Listen is ready.'' is printed and logged; the main thread waits.
@@ -330,14 +330,15 @@ would silently do nothing. Every path, from real runs:
 0 & every program, every OS & success \\
 1 & Python & an uncaught exception crashed the program \\
 2 & argparse (an old Unix habit) & wrong usage: bad command or option \\
-2 & \textbf{us}: \texttt{EXIT\_BAD\_SETTINGS} & fix \texttt{settings.yaml}; restarting would not help \\
 3 & \textbf{us}: \texttt{EXIT\_FATAL} & crash loop or hang; the launcher (stage 2) restarts \\
+78 & \textbf{us}: \texttt{EXIT\_BAD\_SETTINGS} & fix \texttt{settings.yaml}; restarting would not help \\
 \bottomrule
 \end{tabularx}
 \end{center}
-\noindent Ours live in \texttt{app.py}. Code 2 is used twice, so a launcher could not tell ``you
-typed a bad command'' from ``fix your settings''; a different number will be chosen before the
-stage 2 launcher relies on it.
+\noindent Ours live in \texttt{app.py}. Bad settings first used code 2 too, so a launcher could not
+tell ``you typed a bad command'' from ``fix your settings''. Issue M3 changed it to 78, the Unix
+convention for a configuration error (\texttt{EX\_CONFIG} in \texttt{sysexits.h}), which can never
+collide with 0 to 3.
 
 % =====================================================================
 \section{Settings: trust a file only after checking it}
@@ -369,7 +370,7 @@ a typo like \texttt{threshold:} would silently do nothing. Fail loudly, early, a
 explicitly. (2) Notepad can add an invisible byte-order mark; reading with
 \texttt{utf-8-sig} removes it. (3) Notepad can also save as UTF-16 or Windows-1252; those used to
 crash with a raw \texttt{UnicodeDecodeError}, and now give the clear message above with exit
-code 2. \textbf{Always \texttt{safe\_load}:} plain \texttt{yaml.load} can build arbitrary Python
+code 78. \textbf{Always \texttt{safe\_load}:} plain \texttt{yaml.load} can build arbitrary Python
 objects from a crafted file, even run code; \texttt{safe\_load} only builds text, numbers, lists
 and dicts. PyYAML also loses comments when \emph{writing}, so stage 4's web edits to command files
 will use \texttt{ruamel.yaml}, which keeps them.
@@ -1166,7 +1167,7 @@ Fake & a tiny stand-in that behaves the same for the calls that matter \\
 \end{enumerate}
 \subsection*{Practice questions}
 \begin{enumerate}[label=\textbf{\arabic*.}]
-  \item \texttt{Can't start: thresholds.match: must be a number from 0 to 1, got 80}; exit code 2.
+  \item \texttt{Can't start: thresholds.match: must be a number from 0 to 1, got 80}; exit code 78.
   \item A bare \texttt{python} finds the system Python, which has neither PyYAML nor Listen;
         \texttt{listen.exe} has the venv's Python path written inside it.
   \item \texttt{Dog}, \texttt{Animal}, \texttt{object}.

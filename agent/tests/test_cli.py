@@ -38,3 +38,10 @@ def test_run_subcommand_starts_the_agent(monkeypatch):
 def test_help_lists_run(capsys):
     main([])
     assert "run" in capsys.readouterr().out
+
+
+def test_unknown_command_exits_2(capsys):
+    with pytest.raises(SystemExit) as exit_info:
+        main(["bogus"])
+    assert exit_info.value.code == 2
+    assert "invalid choice: 'bogus'" in capsys.readouterr().err

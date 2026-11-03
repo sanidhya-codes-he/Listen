@@ -16,7 +16,7 @@ from listen_agent.shell.terminal import TerminalShell
 log = logging.getLogger("core")
 
 EXIT_OK = 0
-EXIT_BAD_SETTINGS = 2  # the owner must fix settings.yaml; restarting would not help
+EXIT_BAD_SETTINGS = 78  # EX_CONFIG: the owner must fix settings.yaml; restarting would not help
 EXIT_FATAL = 3  # crash loop or hang: the launcher (stage 2) restarts the agent
 JOIN_SECONDS = 2.0
 
