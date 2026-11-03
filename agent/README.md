@@ -1,7 +1,12 @@
 # agent/  (PROGRAM 1: runs on your laptop)
 
 The local Listen agent: one Python process (Doc 01, Doc 04).
-- `listen_agent/` is the code that runs; `tests/` checks it; `pyproject.toml` (added when we build) lists its dependencies.
+- `listen_agent/` is the code that runs; `tests/` checks it.
+- `pyproject.toml` describes the package: its dependencies, the `listen` command, and settings for
+  pytest and ruff. `uv.lock` records the exact version of every library; `.python-version` says
+  which Python (3.11).
+- `settings.yaml` holds your settings (hotkeys, thresholds, mode; never secrets). `logs/` holds the
+  log file (git-ignored).
 - Talks to: the server only over HTTPS via `sync/`. Never imports anything from `server/` or `web/`.
 - Reads: `../commands/` (your command files) and `../shared/` (the recipe schema).
 
