@@ -1,5 +1,8 @@
 # draw_flowchart.py: draw docs/roadmap-flowchart.svg from the issue files and the roadmap table
 #
+# first it asks GitHub (`gh issue list`) which issues are closed, and updates the roadmap's
+# status column and its "ready to start now" line to match.
+#
 # a swimlane chart: one horizontal band per stage, columns left to right in build order,
 # one box per issue, an arrow for each "Depends on" (minus arrows a longer path already implies).
 # arrows take the colour of the stage they start in; arrows into another stage are dashed.
@@ -7,14 +10,17 @@
 # done issues get a tick, issues ready to start get a thick border.
 #
 # run from the repo folder:  agent/.venv/Scripts/python docs/issues/draw_flowchart.py
+import json
 import pathlib
 import re
+import subprocess
 import textwrap
 from xml.sax.saxutils import escape
 
 ISSUES = pathlib.Path("docs/issues")
 ROADMAP = pathlib.Path("docs/roadmap.md")
 OUTPUT = pathlib.Path("docs/roadmap-flowchart.svg")
+READY_PREFIX = "Everything these depend on is done: "
 
 LANES = ["S1", "M", "S2", "S3", "S4", "S5", "S6"]
 COLOURS = {  # (box fill, border and arrow colour, lane background)
@@ -60,14 +66,60 @@ def read_issues():
     return deps, titles
 
 
-def read_roadmap(deps):
+def table_cells(line):
+    # the six cells of a roadmap table row, or [] for any other line
+    return [c.strip() for c in line.split("|")[1:-1]] if line.startswith("| ") else []
+
+
+def read_roadmap(deps, lines):
     # GitHub number and status from the roadmap's table
     number, status = {}, {}
-    for line in ROADMAP.read_text(encoding="utf-8").splitlines():
-        cells = [c.strip() for c in line.split("|")[1:-1]] if line.startswith("| ") else []
+    for line in lines:
+        cells = table_cells(line)
         if len(cells) == 6 and cells[0] in deps:
             number[cells[0]], status[cells[0]] = cells[4], cells[5]
     return number, status
+
+
+def github_states():
+    # our ID (the "[S2-01]" title prefix) -> (closed?, numbers of the PRs that closed it)
+    out = subprocess.run(
+        ["gh", "issue", "list", "--state", "all", "--limit", "500",
+         "--json", "title,state,closedByPullRequestsReferences"],
+        capture_output=True, text=True, encoding="utf-8", check=True,
+    ).stdout
+    states = {}
+    for issue in json.loads(out):
+        found = re.match(r"\[([A-Z0-9-]+)\]", issue["title"])
+        if found:
+            prs = [pr["number"] for pr in issue["closedByPullRequestsReferences"]]
+            states[found.group(1)] = (issue["state"] == "CLOSED", prs)
+    return states
+
+
+def sync_statuses(lines, states):
+    # open -> "todo"; closed -> "done (#PR)", keeping a done status that is already written
+    out = []
+    for line in lines:
+        cells = table_cells(line)
+        if len(cells) == 6 and cells[0] in states:
+            closed, prs = states[cells[0]]
+            if not closed:
+                cells[5] = "todo"
+            elif not cells[5].startswith("done"):
+                cells[5] = f"done (#{prs[0]})" if prs else "done"
+            line = "| " + " | ".join(cells) + " |"
+        out.append(line)
+    return out
+
+
+def check_sync_statuses():
+    rows = ["| M3 | t | S1 | f | #12 | todo |", "| S1 | t | - | f | #4 | done (#1) |",
+            "| M1 | t | S1 | f | #10 | done (#68) |", "| ID | Title | x | y | z | Status |"]
+    states = {"M3": (True, [71]), "S1": (True, []), "M1": (False, [])}
+    assert sync_statuses(rows, states) == [
+        "| M3 | t | S1 | f | #12 | done (#71) |", "| S1 | t | - | f | #4 | done (#1) |",
+        "| M1 | t | S1 | f | #10 | todo |", "| ID | Title | x | y | z | Status |"]
 
 
 def layout(deps):
@@ -135,10 +187,15 @@ def ports(arrows, xy):
 
 
 def main():
+    check_sync_statuses()
+    lines = sync_statuses(ROADMAP.read_text(encoding="utf-8").splitlines(), github_states())
     deps, titles = read_issues()
-    number, status = read_roadmap(deps)
+    number, status = read_roadmap(deps, lines)
     done = {n for n in deps if status.get(n, "").startswith("done")}
     ready = {n for n in deps if n not in done and all(p in done for p in deps[n])}
+    ready_line = READY_PREFIX + ", ".join(sorted(ready)) + "."
+    lines = [ready_line if line.startswith(READY_PREFIX) else line for line in lines]
+    ROADMAP.write_text("\n".join(lines) + "\n", encoding="utf-8")
     xy, lane_top, lane_rows, width, height = layout(deps)
     arrows = reduce_arrows(deps)
     out_y, in_y = ports(arrows, xy)

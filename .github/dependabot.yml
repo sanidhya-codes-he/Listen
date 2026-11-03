@@ -1,0 +1,11 @@
+# dependabot: weekly PRs proposing newer versions of the CI actions and the agent's locked libraries
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: uv
+    directory: /agent
+    schedule:
+      interval: weekly

@@ -6,7 +6,7 @@
 | Depends on | S1 |
 | Labels | stage-2, docs, follow-up |
 | Spec | none |
-| Status | in progress |
+| Status | **done**: PR #73 |
 
 ## Goal
 `agent/README.md` describes the folder as it is now.

@@ -6,7 +6,7 @@
 | Depends on | S1 |
 | Labels | stage-2, agent, follow-up |
 | Spec | §9.1 (launcher) |
-| Status | in progress |
+| Status | **done**: PR #71 |
 
 ## Goal
 Every exit code means exactly one thing, so the launcher (S2-17) can react correctly.
