@@ -1,0 +1,387 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+
+\definecolor{local}{HTML}{2E7D32}
+\definecolor{cloud}{HTML}{1565C0}
+\definecolor{warn}{HTML}{C62828}
+\definecolor{idea}{HTML}{6A1B9A}
+\definecolor{soft}{HTML}{F5F5F5}
+
+\newtcolorbox{concept}[1]{colback=idea!4,colframe=idea!70,fonttitle=\bfseries,title={Concept: #1},breakable}
+\newtcolorbox{analogy}{colback=local!5,colframe=local!70,fonttitle=\bfseries,title={Analogy},breakable}
+\newtcolorbox{why}{colback=cloud!4,colframe=cloud!70,fonttitle=\bfseries,title={Why it is done this way},breakable}
+\newtcolorbox{caution}{colback=warn!4,colframe=warn!70,fonttitle=\bfseries,title={Watch out},breakable}
+\newtcolorbox{exercise}{colback=soft,colframe=black!50,fonttitle=\bfseries,title={Check yourself},breakable}
+\newtcolorbox{quickcheck}[1]{colback=soft,colframe=black!50,fonttitle=\bfseries,title={Quick check #1 (answer in Section~\ref{sec:answers})},breakable}
+
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{soft},frame=single,
+        rulecolor=\color{black!25},columns=fullflexible,keepspaces=true,
+        showstringspaces=false,breaklines=true}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Listen -- Learning Doc 11}
+\rhead{\small Stage 2: the Voice Agent}
+\cfoot{\thepage}
+
+\title{\textbf{Listen}\\[4pt]\large Learning Doc 11: Stage 2, the Voice Agent\\
+       \normalsize One section per issue, written as each issue closes}
+\author{Implementation, stage 2 of 6}
+\date{started 4 November 2026}
+
+\begin{document}
+\sloppy
+\maketitle
+
+\begin{abstract}
+\noindent This document grows during stage 2: when an issue closes, its section is added here
+while the lessons are fresh, and the stage's last issue (S2-19) polishes the whole. Each section
+is taught from zero: the problem first, then the idea, an analogy and where it stops being true,
+the real code and real output, the usual mistakes, and a quick check (answers at the end). So far
+it covers the six issues finished first: M1, M2, M3, M4, M6 and S2-08.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =====================================================================
+\section{Before you start}
+\begin{description}[style=nextline,leftmargin=1.2cm,itemsep=3pt]
+  \item[Doc 10] Everything from stage 1: the package and its command line, settings, logging,
+        events, the bus, workers, the supervisor, locks, fakes and pytest.
+  \item[An issue and a PR] An issue describes one piece of work (its file in
+        \texttt{docs/issues/}); a pull request is the change that does it. \texttt{Closes \#12} in
+        a PR closes issue 12 when the PR is merged.
+  \item[A dependency] A library our code needs. \texttt{pyproject.toml} lists the ones we ask
+        for; they may need further libraries of their own.
+  \item[A version number] \texttt{0.17.3} is MAJOR.MINOR.PATCH: patches fix bugs, minor versions
+        add features, major versions may break things.
+\end{description}
+
+% =====================================================================
+\section{M1: pinning the tools that judge our code}
+\subsection{The problem}
+\texttt{pyproject.toml} said \texttt{dev = ["pytest>=8.0", "ruff>=0.6"]}: ``this version
+\emph{or anything newer}''. Every install, including each fresh CI machine, fetched the newest
+release that day. A new ruff release can add a check; CI then turns red on a commit that only
+touched the README, with no code change at all.
+
+\subsection{The idea: pin}
+\textbf{Pinning} fixes one exact version:
+\begin{lstlisting}
+dev = ["pytest==9.2.0", "ruff==0.17.3"]
+\end{lstlisting}
+\begin{center}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{Written} & \textbf{pip / uv may install} \\
+\midrule
+\texttt{ruff>=0.6} & anything from 0.6 up, so the newest \\
+\texttt{ruff==0.17.3} & exactly 0.17.3 (pinned) \\
+\texttt{ruff\textasciitilde=0.17.3} & 0.17.3, 0.17.4 \ldots{} but not 0.18 (``compatible'') \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\noindent Only the tools that \emph{judge} the code were pinned: if they change, CI's verdict
+changes. Libraries the code merely uses are pinned later by the lock file (Section~\ref{sec:uv}).
+
+\paragraph{Updated before starting.} The issue file was written with 0.17.1 and 9.1.1. On the
+day M1 started, 0.17.3 and 9.2.0 were out, and unpinned CI was already using them, which is
+exactly the problem. The rule ``update the issue file before starting'' caught it.
+
+\begin{analogy}
+Agreeing with a teacher which \emph{edition} of the textbook the exam uses. \emph{Where it
+breaks:} editions change rarely; tools release every few weeks, so a pin must be raised on
+purpose from time to time (Dependabot now proposes those upgrades as pull requests).
+\end{analogy}
+
+\begin{quickcheck}{1}
+With \texttt{ruff==0.17.3} pinned and ruff 0.18.0 released tomorrow, which version does the next
+CI run install, and what must you do to use 0.18.0?
+\end{quickcheck}
+
+% =====================================================================
+\section{M2: strict YAML, refusing duplicate keys}
+\subsection{The problem}
+PyYAML's \texttt{safe\_load} silently keeps the \emph{last} copy of a repeated key. Writing
+\texttt{thresholds:} twice in \texttt{settings.yaml} threw away the first block, and its values
+quietly returned to defaults. The new test showed the bug before any fix existed:
+\begin{lstlisting}
+E       Failed: DID NOT RAISE SettingsError
+\end{lstlisting}
+
+\subsection{The idea: change one method of the parser}
+A YAML \emph{loader} builds Python dicts from the file. A small subclass overrides the one method
+that builds a mapping, and refuses a key it has already seen:
+\begin{lstlisting}[language=Python]
+class _StrictLoader(yaml.SafeLoader):
+    def construct_mapping(self, node, deep=False):
+        seen = set()
+        for key_node, _ in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            if key in seen:
+                raise _DuplicateKey(key, key_node.start_mark.line + 1)  # lines from 1
+            seen.add(key)
+        return super().construct_mapping(node, deep=deep)
+\end{lstlisting}
+\noindent Real result: \texttt{Can't start: settings.yaml:4: duplicate key 'thresholds'},
+exit code 78 (after M3). The line is the \emph{second} occurrence: the one to delete.
+
+\subsection{Moved, not copied}
+\texttt{settings.py} lost its own reading and parsing code (8 lines removed) and now calls the
+shared \texttt{load\_yaml} (3 lines). Reading a \textbf{diff}: lines with \texttt{-} were
+removed, lines with \texttt{+} added, unmarked lines are context. The old messages for unreadable
+files and broken YAML stayed word for word, which is why all 71 old tests passed without edits.
+
+\paragraph{Why move it now rather than later?} Fixing it inside \texttt{settings.py} would have
+been the smaller change; a well-known rule says build for reuse only once a second user exists.
+Here the second user, S2-01's command files, was planned and two steps away, and the check is
+subtle code that should not exist in two copies. Both choices were defensible; the lesson is to
+say the trade-off in the PR, which is now a review rule in \texttt{CODING\_STANDARDS.md}.
+
+\subsection{How the tests are written}
+A test file \texttt{test\_*.py} holds functions \texttt{test\_*}; each calls the code and
+\texttt{assert}s the result. \texttt{with pytest.raises(Error, match="\ldots"):} passes only if
+that error, with that message, is raised inside the block. A fixture such as \texttt{tmp\_path}
+is requested by naming it as a parameter; each test gets a fresh one.
+\texttt{@pytest.mark.parametrize} runs one test once per row of a table.
+
+\begin{caution}
+Inside \texttt{pytest.raises(ValueError)} an expected \texttt{ValueError} makes the test
+\emph{pass}: it is the outcome you asked for. Without \texttt{match}, \emph{any}
+\texttt{ValueError} passes, even one raised for a different reason.
+\end{caution}
+
+\begin{quickcheck}{2}
+After M2, someone writes \texttt{mode:} twice in \texttt{settings.yaml}. What appears in the
+terminal, and with which exit code does \texttt{listen run} end?
+\end{quickcheck}
+
+% =====================================================================
+\section{M3: an exit code with one meaning}
+\subsection{The problem}
+When a program ends it hands back one number. The launcher (S2-17) will only see that number. Code
+\textbf{2} meant two things: argparse uses it for a wrong command (\texttt{listen bogus}), and we
+used it for a bad \texttt{settings.yaml}. The launcher could not tell ``you typed a bad command''
+from ``fix your settings''.
+
+\subsection{The fix: 78}
+\begin{lstlisting}[language=Python]
+EXIT_BAD_SETTINGS = 78  # EX_CONFIG: the owner must fix settings.yaml; restarting would not help
+\end{lstlisting}
+\noindent Everything else already used the \emph{name}, so one line changed. Real runs:
+\texttt{listen bogus} exits 2, a bad \texttt{settings.yaml} exits 78.
+
+\subsection{Why 78: the sysexits.h convention}
+\texttt{sysexits.h} is a list of exit codes from BSD Unix that many command-line programs follow.
+It starts at 64 to stay clear of the small numbers programs use freely.
+\begin{center}
+\begin{tabularx}{\textwidth}{c l X}
+\toprule
+\textbf{Code} & \textbf{Name} & \textbf{Meaning} \\
+\midrule
+64 & \texttt{EX\_USAGE} & the command was used wrongly \\
+65 & \texttt{EX\_DATAERR} & the input data was wrong \\
+66 & \texttt{EX\_NOINPUT} & an input file is missing or unreadable \\
+69 & \texttt{EX\_UNAVAILABLE} & a needed service is unavailable \\
+70 & \texttt{EX\_SOFTWARE} & an internal error (a bug) \\
+71 & \texttt{EX\_OSERR} & an operating-system error \\
+74 & \texttt{EX\_IOERR} & an input/output error \\
+75 & \texttt{EX\_TEMPFAIL} & temporary failure: try again later \\
+77 & \texttt{EX\_NOPERM} & permission denied \\
+78 & \texttt{EX\_CONFIG} & configuration error \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\noindent (Also 67 no such user, 68 no such host, 72 a system file missing, 73 cannot create a
+file, 76 protocol error.) Python offers these names as \texttt{os.EX\_CONFIG} on Linux and Mac,
+but not on Windows: only \texttt{os.EX\_OK} exists there, so \texttt{app.py} writes 78 itself.
+
+\begin{why}
+75 is the one code where restarting makes sense; 78 is one where it never does. Choosing codes
+with a known meaning lets the launcher's rules follow from the number alone.
+\end{why}
+
+\subsection{The guard test}
+\begin{lstlisting}[language=Python]
+def test_unknown_command_exits_2(capsys):
+    with pytest.raises(SystemExit) as exit_info:
+        main(["bogus"])
+    assert exit_info.value.code == 2
+    assert "invalid choice: 'bogus'" in capsys.readouterr().err
+\end{lstlisting}
+\begin{itemize}[nosep]
+  \item \texttt{"bogus"} is a deliberately fake command. argparse ends the program by
+        \emph{raising} \texttt{SystemExit(2)}, so the test catches it.
+  \item \texttt{exit\_info.value} is the caught exception; \texttt{.code} its exit code.
+  \item \texttt{capsys} records printed text; \texttt{.err} is the error stream (stderr), where
+        argparse writes; \texttt{in} checks the phrase appears somewhere in it.
+\end{itemize}
+\noindent It passed from the start: it is a \emph{guard} that pins argparse's 2, so the
+``bad settings must not be 2'' test stays meaningful.
+
+\begin{quickcheck}{3}
+Windows denies Listen the microphone, and that stops the agent. Which code fits, and why not 78?
+\end{quickcheck}
+
+% =====================================================================
+\section{M4: a race test that can fail}
+\subsection{The problem}
+The stage 1 review found that the bus's concurrency test passed even with the lock removed. A test
+that cannot fail protects nothing.
+
+\subsection{Finding the real race first}
+An experiment before writing the test: 8 threads subscribe 8 inboxes to a \emph{brand-new} event
+type at the same moment, 20 trials each way:
+\begin{lstlisting}
+lock=True:  inboxes that got the event, per trial (of 8): [8]
+lock=False: inboxes that got the event, per trial (of 8): [1]
+\end{lstlisting}
+\noindent Without the lock, each thread sees ``no list for this type yet'', makes its own new
+list, and each overwrites the last: 7 subscriptions vanish. This is a
+\textbf{check-then-act} race: between checking and acting, another thread changes the answer.
+The old test never created a new list, so it could not see it.
+
+\subsection{Making a rare race happen every time}
+Creating a list normally takes far too little time for threads to collide reliably. The test
+slows that one moment down on purpose and starts all threads together:
+\begin{lstlisting}[language=Python]
+def slow_new_list():
+    time.sleep(0.01)
+    return []
+
+bus._subscribers = defaultdict(slow_new_list)   # private, on purpose
+start = threading.Barrier(8)                    # all 8 threads go at the same moment
+\end{lstlisting}
+
+\subsection{Proving the test works: break the code on purpose}
+The lock was removed locally (never committed) and the test run: it failed with
+\texttt{assert [0, 0, 0, 0, 0, 0, ...] == [1, 1, 1, 1, 1, 1, ...]}. With the lock back: 20 of 20
+runs passed. Breaking code on purpose to check that a test notices is called \textbf{mutation
+testing}; here it was done by hand.
+
+\begin{analogy}
+Testing a smoke alarm by holding a lit match under it rather than waiting for a real fire.
+\emph{Where it breaks:} the match is not a real fire; the slowed-down factory is not the real
+timing. It proves the lock protects the window, not that the window is ever this wide in practice.
+\end{analogy}
+
+\begin{quickcheck}{4}
+Why does a test that touches a private attribute such as \texttt{\_subscribers} need a comment,
+according to the project's coding standards?
+\end{quickcheck}
+
+% =====================================================================
+\section{M6: a README that matches its folder}
+A README is the first thing a reader opens in a folder; a stale one misleads. \texttt{agent/README}
+still called \texttt{pyproject.toml} ``added when we build'', and never mentioned
+\texttt{uv.lock}, \texttt{.python-version}, \texttt{settings.yaml} or \texttt{logs/}. The fix
+was one line per file. The habit it teaches: when a change adds a file to a folder, its README
+gets a line in the same PR.
+
+% =====================================================================
+\section{S2-08: uv and the lock file}\label{sec:uv}
+\subsection{The problem}
+Stage 2 brings big libraries (faster-whisper, onnxruntime, numpy). With only \texttt{>=} ranges,
+a silent upgrade could change speed or behaviour between the laptop and CI.
+
+\subsection{How the lock file is made}
+\texttt{uv lock} reads the wishes in \texttt{pyproject.toml} (3 names), asks PyPI which versions
+exist, follows each library's own dependencies (pytest alone brought 5 more), and picks one
+version of each that satisfies every rule at once. That search is called \textbf{resolving}.
+The result, \texttt{uv.lock}, records 9 packages with exact versions, download URLs and a
+\textbf{hash} (a fingerprint of the exact file):
+\begin{lstlisting}
+name = "pytest"
+version = "9.2.0"
+dependencies = [
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "iniconfig" }, { name = "packaging" }, { name = "pluggy" }, { name = "pygments" },
+]
+\end{lstlisting}
+
+\paragraph{A universal lock.} A test project with \texttt{uv add pandas} resolved 6 packages
+but installed 4: the lock lists numpy twice (one version for Python 3.11, another for 3.12 and
+later) and \texttt{tzdata} only for Windows. The lock covers every machine; an install takes the
+lines that match this one.
+
+\subsection{What writes it, and what only reads it}
+\begin{center}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{Command} & \textbf{With the lock} \\
+\midrule
+\texttt{uv lock} & resolves and writes it \\
+\texttt{uv add} / \texttt{uv remove} & edits \texttt{pyproject.toml}, re-locks, installs \\
+\texttt{uv sync}, \texttt{uv run} & re-lock first if it is missing or out of date \\
+\texttt{uv sync -{}-locked} & never writes it: fails if it is out of date (what CI runs) \\
+\texttt{uvx tool} & runs a tool once without adding it to the project \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\noindent \texttt{uv.lock} is committed (the recipe); \texttt{.venv} is not (the meal, rebuilt
+from the recipe). Real numbers: CI's agent job went from about 30--36\,s to 22--28\,s.
+
+\begin{caution}
+\textbf{The first CI run failed:} \texttt{Unable to resolve action astral-sh/setup-uv@v10}.
+Many actions publish a moving major tag (\texttt{actions/checkout@v4}); setup-uv only publishes
+exact tags such as \texttt{v10.3.3}. Pinning the exact tag fixed it. Dependabot now proposes
+real, existing newer versions of actions, so nobody has to guess tags.
+\end{caution}
+
+\begin{quickcheck}{5}
+Someone adds a library to \texttt{pyproject.toml} by hand and forgets \texttt{uv lock}. What does
+plain \texttt{uv sync} do in CI, what does \texttt{uv sync -{}-locked} do, and why is the second
+safer?
+\end{quickcheck}
+
+% =====================================================================
+\section{Key takeaways so far}
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{Issue} & \textbf{Mental model} \\
+\midrule
+M1 & tools that judge the code get exact versions, raised on purpose \\
+M2 & refuse silently lost data; one shared loader, not two copies \\
+M3 & an exit code is a contract: one number, one meaning \\
+M4 & a test you never saw fail proves nothing; break the code to check it \\
+M6 & a folder's README changes in the same PR as the folder \\
+S2-08 & \texttt{pyproject.toml} says what is allowed; \texttt{uv.lock} says what was chosen \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =====================================================================
+\section{Answers}\label{sec:answers}
+\begin{enumerate}[label=\textbf{\arabic*.}]
+  \item Still 0.17.3: the pin allows nothing else. To use 0.18.0, change the pin, run
+        \texttt{uv lock} and \texttt{uv sync -{}-extra dev}, run ruff and pytest, fix anything
+        new, and merge that as its own PR (or merge the PR Dependabot opens for it).
+  \item \texttt{load\_yaml} raises \texttt{YamlFileError} (\texttt{settings.yaml:N: duplicate key
+        'mode'}); \texttt{load\_settings} turns it into \texttt{SettingsError}; \texttt{run\_agent}
+        prints \texttt{Can't start: settings.yaml:N: duplicate key 'mode'} and returns 78.
+  \item 77, \texttt{EX\_NOPERM} (permission denied). 78 would send you to fix
+        \texttt{settings.yaml}, which is not the problem.
+  \item Reaching into internals ties the test to details the public interface hides; the comment
+        tells the next reader why the public interface was not enough, so they do not ``tidy'' it
+        away or copy the pattern without reason.
+  \item Plain \texttt{uv sync} quietly re-locks with whatever is newest that day, so CI tests
+        versions nobody reviewed. \texttt{-{}-locked} refuses and fails, so the mistake is caught
+        and the lock is updated deliberately in the PR.
+\end{enumerate}
+
+\end{document}

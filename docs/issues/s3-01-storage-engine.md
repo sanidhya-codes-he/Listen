@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Stage | S3 usage agent and local SQLite |
-| Depends on | S2-08 |
+| Depends on | S2-08, S2-19 (stage order) |
 | Labels | stage-3, agent |
 | Spec | §5 (intro), §9.1 (database busy, disk full, damaged) |
 | Status | todo |

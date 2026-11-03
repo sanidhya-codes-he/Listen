@@ -7,7 +7,8 @@
 # one box per issue, an arrow for each "Depends on" (minus arrows a longer path already implies).
 # arrows take the colour of the stage they start in; arrows into another stage are dashed.
 # opened in a browser, hovering a box highlights its own arrows and neighbours.
-# done issues get a tick, issues ready to start get a thick border.
+# done issues get a tick, issues ready to start get a thick border, and issues on the
+# critical path (the longest chain of unfinished issues) get a red border.
 #
 # run from the repo folder:  agent/.venv/Scripts/python docs/issues/draw_flowchart.py
 import json
@@ -122,6 +123,33 @@ def check_sync_statuses():
         "| M1 | t | S1 | f | #10 | todo |", "| ID | Title | x | y | z | Status |"]
 
 
+def critical_path(deps, done):
+    # every unfinished issue on a longest chain of unfinished issues (each counts as one step)
+    todo = [n for n in deps if n not in done]
+    after = {n: [m for m in todo if n in deps[m]] for n in todo}
+    to_here, from_here = {}, {}
+
+    def steps_to(n):  # longest chain of unfinished issues ending at n
+        if n not in to_here:
+            to_here[n] = 1 + max((steps_to(p) for p in deps[n] if p not in done), default=0)
+        return to_here[n]
+
+    def steps_from(n):  # longest chain of unfinished issues starting at n
+        if n not in from_here:
+            from_here[n] = 1 + max((steps_from(m) for m in after[n]), default=0)
+        return from_here[n]
+
+    longest = max((steps_to(n) for n in todo), default=0)
+    return {n for n in todo if steps_to(n) + steps_from(n) - 1 == longest}
+
+
+def check_critical_path():
+    # a -> b -> d and a -> c -> d tie at 3 steps; e is off to the side; done issues drop out
+    deps = {"a": [], "b": ["a"], "c": ["a"], "d": ["b", "c"], "e": ["a"]}
+    assert critical_path(deps, set()) == {"a", "b", "c", "d"}
+    assert critical_path(deps, {"a", "b"}) == {"c", "d"}
+
+
 def layout(deps):
     # column = one to the right of the latest dependency
     depth = {}
@@ -188,12 +216,15 @@ def ports(arrows, xy):
 
 def main():
     check_sync_statuses()
+    check_critical_path()
     lines = sync_statuses(ROADMAP.read_text(encoding="utf-8").splitlines(), github_states())
     deps, titles = read_issues()
     number, status = read_roadmap(deps, lines)
     done = {n for n in deps if status.get(n, "").startswith("done")}
     ready = {n for n in deps if n not in done and all(p in done for p in deps[n])}
-    ready_line = READY_PREFIX + ", ".join(sorted(ready)) + "."
+    critical = critical_path(deps, done)
+    ready_line = (READY_PREFIX + ", ".join(sorted(ready)) + ". On the critical path: "
+                  + (", ".join(sorted(ready & critical)) or "none") + ".")
     lines = [ready_line if line.startswith(READY_PREFIX) else line for line in lines]
     ROADMAP.write_text("\n".join(lines) + "\n", encoding="utf-8")
     xy, lane_top, lane_rows, width, height = layout(deps)
@@ -239,8 +270,8 @@ def main():
          "before”; boxes in the same column can be done in any order.</text>"),
         (f'<text x="{LEFT}" y="94" font-size="14" fill="#52606D">Arrows take the colour of the '
          "stage they start in; dashed arrows cross into another stage. Thick border = ready to "
-         "start now. ✓ = done. Open this file in a browser and hover a box to highlight "
-         "its links.</text>"),
+         "start now. Red border = on the critical path (the longest chain still to do: "
+         "start there). ✓ = done. Hover a box in a browser to highlight its links.</text>"),
     ]
     # lanes: background band and label
     for lane in LANES:
@@ -269,11 +300,12 @@ def main():
     for n, (bx, by) in xy.items():
         fill, border, _ = COLOURS[lane_of(n)]
         classes = " ".join(["node"] + [f"nb_{css_id(m)}" for m in sorted(neighbours[n])])
-        thickness = 3.2 if n in ready else 1.2
+        thickness = 3.2 if n in ready else (2.4 if n in critical else 1.2)
+        outline = "#C62828" if n in critical else border
         svg.append(f'<g id="n_{css_id(n)}" class="{classes}">')
         svg.append(f"<title>{escape(n)} {escape(number.get(n, ''))}: {escape(titles[n])}</title>")
         svg.append(f'<rect x="{bx}" y="{by}" width="{BOX_W}" height="{BOX_H}" rx="8" '
-                   f'fill="{fill}" stroke="{border}" stroke-width="{thickness}"/>')
+                   f'fill="{fill}" stroke="{outline}" stroke-width="{thickness}"/>')
         head = f"{n}  {number.get(n, '')}" + ("  ✓" if n in done else "")
         svg.append(f'<text x="{bx + 10}" y="{by + 18}" font-size="13" font-weight="700" '
                    f'fill="{border}">{escape(head)}</text>')

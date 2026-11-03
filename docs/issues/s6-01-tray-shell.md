@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Stage | S6 later |
-| Depends on | S2-17 |
+| Depends on | S2-17, S5-10 (stage order) |
 | Labels | stage-6, agent |
 | Spec | §2 (`Shell` interface), §1.2 (tray later) |
 | Status | todo |

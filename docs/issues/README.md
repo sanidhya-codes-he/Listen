@@ -18,6 +18,22 @@ nothing can start before its dependencies are closed. The whole graph is drawn i
 was written (libraries chosen, names that changed, findings from earlier issues). Then copy the
 updated text into the GitHub issue (`gh issue edit N --body-file ...`). Never start from a stale file.
 
+## Stage order
+
+Stages are built one after another: each stage's first tasks also depend on the previous stage's
+sign-off issue (marked `(stage order)` in their "Depends on" line), so only one stage is ever ready.
+
+## After an issue closes
+
+1. **Learning doc**: add the issue's section to its stage's learning doc
+   (`docs/learning/11-stage-2-voice-agent.tex` for stage 2, and so on), in the teach-from-zero
+   format, while the lessons are fresh. The stage's last issue only polishes the doc.
+2. **Roadmap**: run `agent/.venv/Scripts/python docs/issues/draw_flowchart.py` (statuses, the
+   ready line, the chart and its critical path all follow from GitHub).
+3. **Follow-ups, for major issues**: an issue is major when its file has an "Open decisions"
+   section. After its PR merges, list possible follow-up issues, each with a one-line reason; the
+   owner decides which become issue files.
+
 ## Fields in every task file
 
 | Field | Meaning |
