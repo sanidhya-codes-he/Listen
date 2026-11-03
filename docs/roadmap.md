@@ -2,13 +2,15 @@
 
 The build plan as a **DAG** (directed acyclic graph) of GitHub issues: an arrow `A --> B` means
 "B depends on A", so B cannot start before A is closed. Every node has a detailed file in
-[`issues/`](issues/README.md). This file is generated from those files' "Depends on" lines: if they
-change, regenerate it (ask Claude) rather than editing the diagram by hand.
+[`issues/`](issues/README.md); the arrows come from those files' "Depends on" lines.
+
+**After an issue closes**, run `agent/.venv/Scripts/python docs/issues/draw_flowchart.py`: it reads
+every issue's state from GitHub, updates the status table and the ready line, and redraws the chart.
 
 **Rule:** before starting any issue, re-read its file and update it to match decisions made since.
 
 ## Ready to start now
-Everything these depend on is done: M3, M4, M6, S2-01, S2-03, S2-04, S2-09, S2-13, S2-15, S3-01, S4-01.
+Everything these depend on is done: M5, S2-01, S2-03, S2-04, S2-09, S2-13, S2-15, S3-01, S4-01.
 
 ## The flowchart
 
@@ -16,197 +18,19 @@ One box per issue, left to right in build order (click it to open full size):
 
 ![Listen build flowchart](roadmap-flowchart.svg)
 
-After an issue closes, set its status to `done (#PR)` in the table below and redraw:
-`agent/.venv/Scripts/python docs/issues/draw_flowchart.py`
-
-## The graph
-
-```mermaid
-flowchart LR
-  S1["S1<br/>Stage 1: foundations"]
-  subgraph M_box["Follow-ups from the stage 1 review"]
-    M1["M1<br/>Pin ruff and pytest to exact versions"]
-    M2["M2<br/>Strict YAML loading: refuse duplicate keys"]
-    M3["M3<br/>Give 'bad settings' its own exit code"]
-    M4["M4<br/>Make the bus concurrency test able to fail"]
-    M5["M5<br/>Automated tests for run_agent: Ctrl+C and fatal stop"]
-    M6["M6<br/>Fix the outdated sentence in agent/README.md"]
-  end
-  subgraph S2_box["Stage 2: voice agent in the terminal"]
-    S2_01["S2-01<br/>Command files and the recipe schema"]
-    S2_02["S2-02<br/>Normaliser and matcher"]
-    S2_03["S2-03<br/>App index from the Start Menu"]
-    S2_04["S2-04<br/>Primitive registry and app/URL primitives"]
-    S2_05["S2-05<br/>Volume and key primitives"]
-    S2_06["S2-06<br/>Executor, undo and routines"]
-    S2_07["S2-07<br/>Confidence thresholds, risk and continuous-mode guardrails"]
-    S2_08["S2-08<br/>Switch from pip + venv to uv"]
-    S2_09["S2-09<br/>Audio capture, VAD and microphone following"]
-    S2_10["S2-10<br/>Wake word ('Hey Jarvis')"]
-    S2_11["S2-11<br/>listen record-tests: the owner's voice clips"]
-    S2_12["S2-12<br/>Transcriber and model benchmark"]
-    S2_13["S2-13<br/>Hotkeys: push-to-talk and continuous toggle"]
-    S2_14["S2-14<br/>Listener state machine"]
-    S2_15["S2-15<br/>Feedback: chimes, pop-ups and ducking"]
-    S2_16["S2-16<br/>Wiring it together: intent worker and the full voice path"]
-    S2_17["S2-17<br/>Launcher: restart after a crash, one copy only"]
-    S2_18["S2-18<br/>listen debug on: spoken words in the log until restart"]
-    S2_19["S2-19<br/>Learning Doc 11 and stage 2 sign-off"]
-  end
-  subgraph S3_box["Stage 3: usage and local data"]
-    S3_01["S3-01<br/>Storage engine: SQLite, migrations and recovery"]
-    S3_02["S3-02<br/>The local tables"]
-    S3_03["S3-03<br/>Record every command"]
-    S3_04["S3-04<br/>Usage tracker: which app is in front"]
-    S3_05["S3-05<br/>Sites from browser titles"]
-    S3_06["S3-06<br/>Roll-up and purge"]
-    S3_07["S3-07<br/>Review list and 'that's wrong'"]
-    S3_08["S3-08<br/>Learning Doc 12 and stage 3 sign-off"]
-  end
-  subgraph S4_box["Stage 4: server and sync"]
-    S4_01["S4-01<br/>Server scaffolding and the CI server job"]
-    S4_02["S4-02<br/>Server database: models and migrations"]
-    S4_03["S4-03<br/>Authentication: login, sessions, lock-out"]
-    S4_04["S4-04<br/>Devices and device tokens"]
-    S4_05["S4-05<br/>The sync endpoint"]
-    S4_06["S4-06<br/>Sync client on the laptop"]
-    S4_07["S4-07<br/>Command snapshots and pending edits"]
-    S4_08["S4-08<br/>Analytics and history endpoints"]
-    S4_09["S4-09<br/>Learning Doc 13 and stage 4 sign-off"]
-  end
-  subgraph S5_box["Stage 5: web app and AI builder"]
-    S5_01["S5-01<br/>Web app scaffolding, themes, Dock and the CI web job"]
-    S5_02["S5-02<br/>Login page and the four page states"]
-    S5_03["S5-03<br/>Overview page"]
-    S5_04["S5-04<br/>History page"]
-    S5_05["S5-05<br/>App usage page"]
-    S5_06["S5-06<br/>Commands page and the guided form"]
-    S5_07["S5-07<br/>Insights page"]
-    S5_08["S5-08<br/>Devices and settings page"]
-    S5_09["S5-09<br/>AI command builder on the laptop (Gemini)"]
-    S5_10["S5-10<br/>Learning Doc 14 and stage 5 sign-off"]
-  end
-  subgraph S6_box["Stage 6: later"]
-    S6_01["S6-01<br/>System tray shell"]
-    S6_02["S6-02<br/>Chrome profiles in routines"]
-    S6_03["S6-03<br/>Packaging: a real installed app"]
-    S6_04["S6-04<br/>Deployment: server and web app online"]
-    S6_05["S6-05<br/>Learning Doc 15 and project sign-off"]
-  end
-  S1 --> M1
-  S1 --> M2
-  S1 --> M3
-  S1 --> M4
-  S1 --> M5
-  M3 --> M5
-  S1 --> M6
-  M2 --> S2_01
-  S2_01 --> S2_02
-  S1 --> S2_03
-  S1 --> S2_04
-  S2_04 --> S2_05
-  S2_04 --> S2_06
-  S2_05 --> S2_06
-  S2_02 --> S2_07
-  M1 --> S2_08
-  S2_08 --> S2_09
-  S2_09 --> S2_10
-  S2_09 --> S2_11
-  S2_09 --> S2_12
-  S2_11 --> S2_12
-  S2_08 --> S2_13
-  S2_10 --> S2_14
-  S2_12 --> S2_14
-  S2_13 --> S2_14
-  S2_08 --> S2_15
-  S2_02 --> S2_16
-  S2_03 --> S2_16
-  S2_06 --> S2_16
-  S2_07 --> S2_16
-  S2_14 --> S2_16
-  S2_15 --> S2_16
-  M3 --> S2_17
-  S2_16 --> S2_17
-  S2_16 --> S2_18
-  S2_17 --> S2_19
-  S2_18 --> S2_19
-  S2_08 --> S3_01
-  S3_01 --> S3_02
-  S3_02 --> S3_03
-  S2_16 --> S3_03
-  S3_02 --> S3_04
-  S3_04 --> S3_05
-  M2 --> S3_05
-  S3_03 --> S3_06
-  S3_04 --> S3_06
-  S3_03 --> S3_07
-  S3_05 --> S3_08
-  S3_06 --> S3_08
-  S3_07 --> S3_08
-  S2_08 --> S4_01
-  S4_01 --> S4_02
-  S4_02 --> S4_03
-  S4_03 --> S4_04
-  S4_04 --> S4_05
-  S4_05 --> S4_06
-  S3_06 --> S4_06
-  S4_06 --> S4_07
-  S2_01 --> S4_07
-  S4_05 --> S4_08
-  S4_07 --> S4_09
-  S4_08 --> S4_09
-  S4_01 --> S5_01
-  S5_01 --> S5_02
-  S4_03 --> S5_02
-  S5_02 --> S5_03
-  S4_08 --> S5_03
-  S5_02 --> S5_04
-  S4_08 --> S5_04
-  S5_02 --> S5_05
-  S4_08 --> S5_05
-  S5_02 --> S5_06
-  S4_07 --> S5_06
-  S5_02 --> S5_07
-  S4_08 --> S5_07
-  S5_02 --> S5_08
-  S4_04 --> S5_08
-  S2_01 --> S5_09
-  S2_02 --> S5_09
-  S5_03 --> S5_10
-  S5_04 --> S5_10
-  S5_05 --> S5_10
-  S5_06 --> S5_10
-  S5_07 --> S5_10
-  S5_08 --> S5_10
-  S5_09 --> S5_10
-  S2_17 --> S6_01
-  S2_06 --> S6_02
-  S2_17 --> S6_03
-  S4_09 --> S6_04
-  S5_10 --> S6_04
-  S6_01 --> S6_05
-  S6_02 --> S6_05
-  S6_03 --> S6_05
-  S6_04 --> S6_05
-  classDef done fill:#C8E6C9,stroke:#2E7D32
-  class S1 done
-```
-
-Green = done. Stage issues S2..S6 are the boxes; their tasks are their sub-issues on GitHub.
-
 ## Status
 
-Fill in the GitHub number after `gh issue create`; set the status when the issue's PR is merged.
+Fill in the GitHub number after `gh issue create`; `draw_flowchart.py` keeps the status up to date.
 
 | ID | Title | Depends on | File | GitHub # | Status |
 |---|---|---|---|---|---|
 | S1 | Stage 1: foundations | - | [s1-foundations.md](issues/s1-foundations.md) | #4 | done (#1) |
 | M1 | Pin ruff and pytest to exact versions | S1 | [m1-pin-dev-tools.md](issues/m1-pin-dev-tools.md) | #10 | done (#68) |
 | M2 | Strict YAML loading: refuse duplicate keys | S1 | [m2-strict-yaml.md](issues/m2-strict-yaml.md) | #11 | done (#70) |
-| M3 | Give "bad settings" its own exit code | S1 | [m3-exit-codes.md](issues/m3-exit-codes.md) | #12 | todo |
-| M4 | Make the bus concurrency test able to fail | S1 | [m4-bus-concurrency-test.md](issues/m4-bus-concurrency-test.md) | #13 | todo |
+| M3 | Give "bad settings" its own exit code | S1 | [m3-exit-codes.md](issues/m3-exit-codes.md) | #12 | done (#71) |
+| M4 | Make the bus concurrency test able to fail | S1 | [m4-bus-concurrency-test.md](issues/m4-bus-concurrency-test.md) | #13 | done (#72) |
 | M5 | Automated tests for `run_agent`: Ctrl+C and fatal stop | S1, M3 | [m5-run-agent-tests.md](issues/m5-run-agent-tests.md) | #14 | todo |
-| M6 | Fix the outdated sentence in `agent/README.md` | S1 | [m6-readme-fix.md](issues/m6-readme-fix.md) | #15 | todo |
+| M6 | Fix the outdated sentence in `agent/README.md` | S1 | [m6-readme-fix.md](issues/m6-readme-fix.md) | #15 | done (#73) |
 | S2-01 | Command files and the recipe schema | M2 | [s2-01-command-files.md](issues/s2-01-command-files.md) | #16 | todo |
 | S2-02 | Normaliser and matcher | S2-01 | [s2-02-matcher.md](issues/s2-02-matcher.md) | #17 | todo |
 | S2-03 | App index from the Start Menu | S1 | [s2-03-app-index.md](issues/s2-03-app-index.md) | #18 | todo |

@@ -6,7 +6,7 @@
 | Depends on | S1 |
 | Labels | stage-2, agent, follow-up |
 | Spec | §2 (event bus) |
-| Status | in progress |
+| Status | **done**: PR #72 |
 
 ## Goal
 A bus test that fails if the bus's lock is removed.

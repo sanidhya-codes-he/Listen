@@ -16,5 +16,7 @@ jobs:
           enable-cache: true         # reuse downloaded libraries between runs
           cache-dependency-glob: agent/uv.lock
       - run: uv sync --locked --extra dev   # exact versions from uv.lock; fails if the lock is stale
-      - run: uv run ruff check .
+      - run: uvx --from actionlint-py==1.7.12.25 actionlint   # checks the workflow files themselves
+        working-directory: .         # actionlint looks for .github/workflows from the repo root
+      - run: uv run ruff check --config pyproject.toml . ../docs/issues   # agent rules, docs scripts too
       - run: uv run pytest           # speech tests (stage 2) skip: no clips on GitHub
