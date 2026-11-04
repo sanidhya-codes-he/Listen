@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Stage | S6 later |
-| Depends on | S2-17 |
+| Depends on | S2-17, S5-10 (stage order) |
 | Labels | stage-6, agent |
 | Spec | §10 stage 6; stage 1 review (non-editable installs) |
 | Status | todo |

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Stage | S6 later |
-| Depends on | S2-06 |
+| Depends on | S2-06, S5-10 (stage order) |
 | Labels | stage-6, agent |
 | Spec | §3.8 (later: `browser` and `profile` on `open_url` steps) |
 | Status | todo |

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Stage | S5 web app |
-| Depends on | S4-01 |
+| Depends on | S4-01, S4-09 (stage order) |
 | Labels | stage-5, web, ci |
 | Spec | §8 (intro), §8.4 (visual design), §9.3 (web tests), §9.5 (CI), Doc 08 §9 |
 | Status | todo |

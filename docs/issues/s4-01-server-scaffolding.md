@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Stage | S4 server and sync |
-| Depends on | S2-08 |
+| Depends on | S2-08, S3-08 (stage order) |
 | Labels | stage-4, server, ci |
 | Spec | §7 (intro), §7.4 (errors), §9.2 (server logs), §9.5 (CI) |
 | Status | todo |

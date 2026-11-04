@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Stage | S5 web app and AI command builder |
-| Depends on | S2-01, S2-02 |
+| Depends on | S2-01, S2-02, S4-09 (stage order) |
 | Labels | stage-5, agent |
 | Spec | §3.10 |
 | Status | todo |
