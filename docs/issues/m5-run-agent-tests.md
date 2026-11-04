@@ -6,7 +6,7 @@
 | Depends on | S1, M3 |
 | Labels | stage-2, agent, follow-up |
 | Spec | §4.7 (start-up and shut-down) |
-| Status | todo |
+| Status | in progress |
 
 ## Goal
 The two main ways the agent stops are covered by tests, not only by a manual check.
@@ -16,7 +16,10 @@ Only the "bad settings" path of `run_agent` is tested. Ctrl+C (exit 0, "stopped"
 supervisor decision (exit 3) were checked by hand once.
 
 ## Scope
-- test 1: start `run_agent` with a `tmp_path` log folder; after "Listen is ready" is printed, raise
+(updated 2026-11-04 before starting: uv command; settings and logs both in `tmp_path`)
+- both tests give `run_agent` a settings file and a log folder inside `tmp_path`, so they never
+  touch the real `agent/settings.yaml` or `agent/logs/`
+- test 1: start `run_agent`; after "Listen is ready" is printed, raise
   `KeyboardInterrupt` in the main thread (`_thread.interrupt_main()` from a timer); assert exit 0,
   "Stopping..." printed, "stopped (exit code 0)" in the log
 - test 2: make the app call `fatal(...)` shortly after start (monkeypatch); assert exit 3 and
@@ -26,11 +29,14 @@ supervisor decision (exit 3) were checked by hand once.
 The launcher reacting to these codes (S2-17).
 
 ## Done when
-- [ ] both tests pass in under 3 seconds each, locally and on CI (Windows)
-- [ ] no stray threads left running after the tests
+- [x] both tests pass in under 3 seconds each, locally and on CI (Windows)
+- [x] no stray threads left running after the tests
 
 ## How to test
-`agent/.venv/Scripts/python -m pytest agent/tests/test_app.py -v`
+```
+cd agent
+uv run pytest tests/test_app.py -v
+```
 
 ## Learning
 Testing a long-running loop; `_thread.interrupt_main`; why tests must clean up threads.
