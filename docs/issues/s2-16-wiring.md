@@ -19,7 +19,8 @@ path meets the 1.5 s budget.
 ## Scope
 - intent worker: `Transcribed` -> normalise, match, decide (S2-07) -> `IntentMatched` /
   `IntentNotMatched` / `ConfirmationRequested`; continuous-mode unmatched -> `HeardInContinuous`
-- housekeeping worker: every 2 s, microphone change and command-file reload
+- housekeeping worker: every 2 s, microphone change and command-file reload; the app index's `rebuild()` daily and
+  on the command "refresh apps" (moved here from S2-03)
 - start-up order from §4.7 (settings -> commands -> app index -> restore ducked volumes -> models ->
   microphone -> threads -> "Listen is ready"); shut-down order from §4.7
 - the terminal shell's lines from §4.8 (`heard "..." (0.93)`, `match ...`, `done ...`,
