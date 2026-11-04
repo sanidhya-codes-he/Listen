@@ -1,4 +1,6 @@
 # tests for start-up and shut-down
+import _thread
+import threading
 import time
 
 from listen_agent.app import EXIT_BAD_SETTINGS, EXIT_FATAL, EXIT_OK, App, run_agent
@@ -50,3 +52,41 @@ def test_bad_settings_exit_with_the_configuration_error_code():
 def test_bad_settings_and_bad_command_lines_exit_differently():
     # argparse exits 2 for a wrong command line; the launcher must tell the two apart
     assert EXIT_BAD_SETTINGS not in (EXIT_OK, 1, 2, EXIT_FATAL)
+
+
+def agent_threads():
+    # the threads App starts: one per worker, plus the supervisor
+    return [t for t in threading.enumerate() if t.name in ("shell", "supervisor")]
+
+
+def test_ctrl_c_stops_the_agent_cleanly(tmp_path):
+    lines = []
+
+    def out(line):
+        lines.append(line)
+        if line.startswith("Listen is ready"):
+            # what Ctrl+C does: raise KeyboardInterrupt in the main thread
+            threading.Timer(0.2, _thread.interrupt_main).start()
+
+    code = run_agent(settings_file=tmp_path / "settings.yaml", log_dir=tmp_path / "logs", out=out)
+    assert code == EXIT_OK
+    assert "Stopping..." in lines
+    assert "stopped (exit code 0)" in (tmp_path / "logs" / "listen.log").read_text(encoding="utf-8")
+    assert agent_threads() == []
+
+
+def test_a_fatal_supervisor_decision_stops_the_agent_with_code_3(tmp_path, monkeypatch):
+    start = App.start
+
+    def start_then_fail(self):
+        start(self)
+        threading.Timer(0.2, self.fatal, args=("shell stopped responding",)).start()
+
+    monkeypatch.setattr(App, "start", start_then_fail)
+    code = run_agent(settings_file=tmp_path / "settings.yaml", log_dir=tmp_path / "logs",
+                     out=lambda line: None)
+    assert code == EXIT_FATAL
+    log_text = (tmp_path / "logs" / "listen.log").read_text(encoding="utf-8")
+    assert "stopping: shell stopped responding" in log_text
+    assert "stopped (exit code 3)" in log_text
+    assert agent_threads() == []
