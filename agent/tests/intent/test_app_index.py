@@ -78,7 +78,17 @@ def test_find_by_name_alias_or_close_misspelling(start_menu, spoken, expected, s
         assert similarity == score
 
 
-@pytest.mark.parametrize("spoken", ["spotify", "crome", "code", ""])
+@pytest.mark.parametrize(
+    "spoken",
+    [
+        "spotify",  # not installed
+        "crome",  # too mangled (0.56)
+        "code",  # one word of a longer name (0.36)
+        "",  # nothing heard
+        "visual code",  # 0.76: just under the line
+        "chrome",  # 0.63: refused at 0.8, accepted at 0.6
+    ],
+)
 def test_unknown_or_too_different_names_are_refused(start_menu, spoken):
     folders, reader = start_menu
     assert AppIndex(folders, read_targets=reader).find(spoken) is None
@@ -88,6 +98,27 @@ def test_an_alias_to_an_app_that_is_not_installed_finds_nothing(start_menu):
     folders, reader = start_menu
     index = AppIndex(folders, read_targets=reader, aliases={"music": "Spotify"})
     assert index.find("music") is None
+
+
+def test_aliases_are_cleaned_like_spoken_names(start_menu):
+    folders, reader = start_menu
+    index = AppIndex(folders, read_targets=reader, aliases={" VS  Code ": "Visual Studio Code"})
+    assert index.find("vs code")[0].name == "Visual Studio Code"
+
+
+def test_the_real_reader_reads_a_real_shortcut(tmp_path):
+    # every other test fakes the reader; this one makes a real .lnk (CI runs on Windows too)
+    import win32com.client
+
+    from listen_agent.intent.app_index import read_targets
+
+    program = tmp_path / "tool.exe"
+    program.write_bytes(b"")
+    link = tmp_path / "Tool.lnk"
+    made = win32com.client.Dispatch("WScript.Shell").CreateShortcut(str(link))
+    made.TargetPath = str(program)
+    made.Save()
+    assert read_targets([link]) == {link: str(program)}
 
 
 def test_missing_folders_are_skipped(tmp_path):

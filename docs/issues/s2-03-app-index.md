@@ -47,8 +47,13 @@ uv run pytest -k app_index -v
 ```
 
 ## Decisions (made 2026-11-04)
-- Reading shortcut targets: **pywin32** (`win32com`), measured 7x faster than PowerShell; launching
-  the `.lnk` itself was rejected because it gives no process id for undo.
+- Reading shortcut targets: **pywin32** (`win32com`), measured 7x faster than PowerShell. The target
+  is used to find an app's windows (focus, close). Launching goes through the shortcut itself with
+  `ShellExecuteExW` (S2-04), which keeps its arguments and "Start in" folder and still returns a
+  process id for undo (confirmed in S2-04's manual check, PR #80).
+- (review of PR #79, fixed in a follow-up PR) the 0.8 line is tested from both sides ("visual
+  code" 0.76 and "chrome" 0.63 are refused), aliases are cleaned like spoken names, and the real
+  shortcut reader has a test; short names like "chrome" come from S2-01's aliases.
 
 ## Learning
 Windows shortcuts; string similarity (`difflib.SequenceMatcher`); testing file-system code with

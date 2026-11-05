@@ -39,7 +39,9 @@ class AppIndex:
     ) -> None:
         self.folders = list(folders)
         self.read_targets = read_targets
-        self.aliases = {spoken.lower(): name for spoken, name in (aliases or {}).items()}
+        # cleaned like spoken names in find(), so "vs  code" in a command file still matches
+        self.aliases = {" ".join(spoken.lower().split()): name
+                        for spoken, name in (aliases or {}).items()}
         self.threshold = threshold
         self.rebuild()
 
