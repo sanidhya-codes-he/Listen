@@ -10,7 +10,7 @@ every issue's state from GitHub, updates the status table and the ready line, an
 **Rule:** before starting any issue, re-read its file and update it to match decisions made since.
 
 ## Ready to start now
-Everything these depend on is done: M5, S2-01, S2-03, S2-04, S2-09, S2-13, S2-15. On the critical path: S2-09.
+Everything these depend on is done: S2-01, S2-05, S2-09, S2-13, S2-15. On the critical path: S2-09.
 
 ## The flowchart
 
@@ -29,13 +29,13 @@ Fill in the GitHub number after `gh issue create`; `draw_flowchart.py` keeps the
 | M2 | Strict YAML loading: refuse duplicate keys | S1 | [m2-strict-yaml.md](issues/m2-strict-yaml.md) | #11 | done (#70) |
 | M3 | Give "bad settings" its own exit code | S1 | [m3-exit-codes.md](issues/m3-exit-codes.md) | #12 | done (#71) |
 | M4 | Make the bus concurrency test able to fail | S1 | [m4-bus-concurrency-test.md](issues/m4-bus-concurrency-test.md) | #13 | done (#72) |
-| M5 | Automated tests for `run_agent`: Ctrl+C and fatal stop | S1, M3 | [m5-run-agent-tests.md](issues/m5-run-agent-tests.md) | #14 | todo |
+| M5 | Automated tests for `run_agent`: Ctrl+C and fatal stop | S1, M3 | [m5-run-agent-tests.md](issues/m5-run-agent-tests.md) | #14 | done (#78) |
 | M6 | Fix the outdated sentence in `agent/README.md` | S1 | [m6-readme-fix.md](issues/m6-readme-fix.md) | #15 | done (#73) |
 | M7 | Retro: agent environment | nothing | [m7-retro-environment.md](issues/m7-retro-environment.md) | #76 | done (#74) |
 | S2-01 | Command files and the recipe schema | M2 | [s2-01-command-files.md](issues/s2-01-command-files.md) | #16 | todo |
 | S2-02 | Normaliser and matcher | S2-01 | [s2-02-matcher.md](issues/s2-02-matcher.md) | #17 | todo |
-| S2-03 | App index from the Start Menu | S1 | [s2-03-app-index.md](issues/s2-03-app-index.md) | #18 | todo |
-| S2-04 | Primitive registry and app/URL primitives | S1 | [s2-04-primitives.md](issues/s2-04-primitives.md) | #19 | todo |
+| S2-03 | App index from the Start Menu | S1 | [s2-03-app-index.md](issues/s2-03-app-index.md) | #18 | done (#79) |
+| S2-04 | Primitive registry and app/URL primitives | S1 | [s2-04-primitives.md](issues/s2-04-primitives.md) | #19 | done (#80) |
 | S2-05 | Volume and key primitives | S2-04 | [s2-05-volume-and-keys.md](issues/s2-05-volume-and-keys.md) | #20 | todo |
 | S2-06 | Executor, undo and routines | S2-04, S2-05 | [s2-06-executor-undo-routines.md](issues/s2-06-executor-undo-routines.md) | #21 | todo |
 | S2-07 | Confidence thresholds, risk and continuous-mode guardrails | S2-02 | [s2-07-thresholds.md](issues/s2-07-thresholds.md) | #22 | todo |
