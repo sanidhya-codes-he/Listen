@@ -30,13 +30,14 @@ class FakeSystem:
         self.apps = apps
         self.windows = windows or {}
         self.calls: list[tuple] = []
+        self.pid: int | None = 4321  # what launch() returns
 
     def open_url(self, url):
         self.calls.append(("open_url", url))
 
-    def launch(self, path):
-        self.calls.append(("launch", path))
-        return None if path.suffix == ".lnk" else 4321
+    def launch(self, shortcut):
+        self.calls.append(("launch", shortcut))
+        return self.pid
 
     def windows_of(self, program):
         return list(self.windows.get(program, []))

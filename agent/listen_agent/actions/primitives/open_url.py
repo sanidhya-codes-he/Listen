@@ -8,4 +8,8 @@ from listen_agent.actions.registry import ActionError, primitive
 def open_url(system, url):
     if urlparse(url).scheme not in ("http", "https"):
         raise ActionError("open_url: only http and https addresses can be opened")
-    system.open_url(url)
+    try:
+        system.open_url(url)
+    except OSError:
+        # Python's message quotes the address, which may hold spoken words
+        raise ActionError("open_url: the browser could not be started") from None
