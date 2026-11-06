@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Stage | S2 voice agent in the terminal |
-| Depends on | S2-02, S2-03, S2-06, S2-07, S2-14, S2-15 |
+| Depends on | S2-02, S2-03, S2-06, S2-07, S2-14, S2-15, S2-20, S2-21 |
 | Labels | stage-2, agent |
 | Spec | §4.1 (threads), §4.3 (events), §4.6 (latency), §4.7 (start-up order), §4.8 (terminal lines) |
 | Status | todo |

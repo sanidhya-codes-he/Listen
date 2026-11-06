@@ -11,7 +11,7 @@ every issue's state from GitHub, updates the status table and the ready line, an
 after a major issue merges, its dependents' files are refreshed.
 
 ## Ready to start now
-Everything these depend on is done: S2-01, S2-05, S2-09, S2-13, S2-15. On the critical path: S2-09.
+Everything these depend on is done: S2-01, S2-05, S2-09, S2-13, S2-15, S2-20, S2-21. On the critical path: S2-09.
 
 ## The flowchart
 
@@ -48,10 +48,12 @@ Fill in the GitHub number after `gh issue create`; `draw_flowchart.py` keeps the
 | S2-13 | Hotkeys: push-to-talk and continuous toggle | S2-08 | [s2-13-hotkeys.md](issues/s2-13-hotkeys.md) | #28 | todo |
 | S2-14 | Listener state machine | S2-10, S2-12, S2-13 | [s2-14-listener.md](issues/s2-14-listener.md) | #29 | todo |
 | S2-15 | Feedback: chimes, pop-ups and ducking | S2-08 | [s2-15-feedback.md](issues/s2-15-feedback.md) | #30 | todo |
-| S2-16 | Wiring it together: intent worker and the full voice path | S2-02, S2-03, S2-06, S2-07, S2-14, S2-15 | [s2-16-wiring.md](issues/s2-16-wiring.md) | #31 | todo |
+| S2-16 | Wiring it together: intent worker and the full voice path | S2-02, S2-03, S2-06, S2-07, S2-14, S2-15, S2-20, S2-21 | [s2-16-wiring.md](issues/s2-16-wiring.md) | #31 | todo |
 | S2-17 | Launcher: restart after a crash, one copy only | M3, S2-16 | [s2-17-launcher.md](issues/s2-17-launcher.md) | #32 | todo |
 | S2-18 | `listen debug on`: spoken words in the log until restart | S2-16 | [s2-18-debug-switch.md](issues/s2-18-debug-switch.md) | #33 | todo |
 | S2-19 | Learning Doc 11 and stage 2 sign-off | S2-17, S2-18 | [s2-19-doc-11.md](issues/s2-19-doc-11.md) | #34 | todo |
+| S2-20 | Store apps in the app index | S2-03 | [s2-20-store-apps.md](issues/s2-20-store-apps.md) | #82 | todo |
+| S2-21 | A damaged shortcut must not stop the app index | S2-03 | [s2-21-damaged-shortcuts.md](issues/s2-21-damaged-shortcuts.md) | #83 | todo |
 | S2 | Stage 2: voice agent in the terminal | S1 | [s2-voice-agent.md](issues/s2-voice-agent.md) | #5 | todo |
 | S3-01 | Storage engine: SQLite, migrations and recovery | S2-08 | [s3-01-storage-engine.md](issues/s3-01-storage-engine.md) | #35 | todo |
 | S3-02 | The local tables | S3-01 | [s3-02-tables.md](issues/s3-02-tables.md) | #36 | todo |

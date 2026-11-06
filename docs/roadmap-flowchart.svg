@@ -58,6 +58,10 @@ svg:has(#n_S2_18:hover) .e_S2_18 { opacity: 1; stroke-width: 3; }
 svg:has(#n_S2_18:hover) #n_S2_18, svg:has(#n_S2_18:hover) .nb_S2_18 { opacity: 1; }
 svg:has(#n_S2_19:hover) .e_S2_19 { opacity: 1; stroke-width: 3; }
 svg:has(#n_S2_19:hover) #n_S2_19, svg:has(#n_S2_19:hover) .nb_S2_19 { opacity: 1; }
+svg:has(#n_S2_20:hover) .e_S2_20 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_20:hover) #n_S2_20, svg:has(#n_S2_20:hover) .nb_S2_20 { opacity: 1; }
+svg:has(#n_S2_21:hover) .e_S2_21 { opacity: 1; stroke-width: 3; }
+svg:has(#n_S2_21:hover) #n_S2_21, svg:has(#n_S2_21:hover) .nb_S2_21 { opacity: 1; }
 svg:has(#n_S3_01:hover) .e_S3_01 { opacity: 1; stroke-width: 3; }
 svg:has(#n_S3_01:hover) #n_S3_01, svg:has(#n_S3_01:hover) .nb_S3_01 { opacity: 1; }
 svg:has(#n_S3_02:hover) .e_S3_02 { opacity: 1; stroke-width: 3; }
@@ -174,8 +178,8 @@ svg:has(#n_S6_05:hover) #n_S6_05, svg:has(#n_S6_05:hover) .nb_S6_05 { opacity: 1
 <path class="edge e_S2_01 e_S2_02" d="M850,735.0 C890,735.0 868,883.0 908,883.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
 <path class="edge e_S1 e_S2_03" d="M350,207.5 C390,207.5 368,661.0 408,661.0" fill="none" stroke="#2E7D32" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S1)"/>
 <path class="edge e_S1 e_S2_04" d="M350,214.8 C390,214.8 368,735.0 408,735.0" fill="none" stroke="#2E7D32" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S1)"/>
-<path class="edge e_S2_04 e_S2_05" d="M600,735.0 C640,735.0 618,809.0 658,809.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
-<path class="edge e_S2_05 e_S2_06" d="M850,809.0 C890,809.0 868,957.0 908,957.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_04 e_S2_05" d="M600,735.0 C640,735.0 618,957.0 658,957.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_05 e_S2_06" d="M850,957.0 C890,957.0 868,957.0 908,957.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
 <path class="edge e_S2_02 e_S2_07" d="M1100,883.0 C1140,883.0 1118,809.0 1158,809.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
 <path class="edge e_M1 e_S2_08" d="M600,279.0 C640,279.0 618,661.0 658,661.0" fill="none" stroke="#B8860B" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_M)"/>
 <path class="edge e_S2_08 e_S2_09" d="M850,646.5 C890,646.5 868,661.0 908,661.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
@@ -187,16 +191,19 @@ svg:has(#n_S6_05:hover) #n_S6_05, svg:has(#n_S6_05:hover) .nb_S6_05 { opacity: 1
 <path class="edge e_S2_12 e_S2_14" d="M1600,661.0 C1640,661.0 1618,661.0 1658,661.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
 <path class="edge e_S2_13 e_S2_14" d="M1100,735.0 C1379.0,735.0 1379.0,675.5 1658,675.5" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
 <path class="edge e_S2_08 e_S2_15" d="M850,675.5 C890,675.5 868,809.0 908,809.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
-<path class="edge e_S2_03 e_S2_16" d="M600,661.0 C1254.0,661.0 1254.0,641.7 1908,641.7" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
-<path class="edge e_S2_06 e_S2_16" d="M1100,957.0 C1504.0,957.0 1504.0,680.3 1908,680.3" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
-<path class="edge e_S2_07 e_S2_16" d="M1350,809.0 C1629.0,809.0 1629.0,661.0 1908,661.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
-<path class="edge e_S2_14 e_S2_16" d="M1850,661.0 C1890,661.0 1868,651.3 1908,651.3" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
-<path class="edge e_S2_15 e_S2_16" d="M1100,809.0 C1504.0,809.0 1504.0,670.7 1908,670.7" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_06 e_S2_16" d="M1100,957.0 C1504.0,957.0 1504.0,681.7 1908,681.7" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_07 e_S2_16" d="M1350,809.0 C1629.0,809.0 1629.0,648.6 1908,648.6" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_14 e_S2_16" d="M1850,661.0 C1890,661.0 1868,640.3 1908,640.3" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_15 e_S2_16" d="M1100,809.0 C1504.0,809.0 1504.0,656.9 1908,656.9" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_20 e_S2_16" d="M850,809.0 C1379.0,809.0 1379.0,665.1 1908,665.1" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_21 e_S2_16" d="M850,883.0 C1379.0,883.0 1379.0,673.4 1908,673.4" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
 <path class="edge e_M3 e_S2_17" d="M600,436.7 C1379.0,436.7 1379.0,651.3 2158,651.3" fill="none" stroke="#B8860B" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_M)"/>
 <path class="edge e_S2_16 e_S2_17" d="M2100,651.3 C2140,651.3 2118,670.7 2158,670.7" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
 <path class="edge e_S2_16 e_S2_18" d="M2100,670.7 C2140,670.7 2118,735.0 2158,735.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
 <path class="edge e_S2_17 e_S2_19" d="M2350,661.0 C2390,661.0 2368,651.3 2408,651.3" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
 <path class="edge e_S2_18 e_S2_19" d="M2350,735.0 C2390,735.0 2368,670.7 2408,670.7" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_03 e_S2_20" d="M600,651.3 C640,651.3 618,809.0 658,809.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
+<path class="edge e_S2_03 e_S2_21" d="M600,670.7 C640,670.7 618,883.0 658,883.0" fill="none" stroke="#1565C0" stroke-width="1.6" marker-end="url(#a_S2)"/>
 <path class="edge e_S2_19 e_S3_01" d="M2600,661.0 C2640,661.0 2618,1043.0 2658,1043.0" fill="none" stroke="#1565C0" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#a_S2)"/>
 <path class="edge e_S3_01 e_S3_02" d="M2850,1043.0 C2890,1043.0 2868,1043.0 2908,1043.0" fill="none" stroke="#00796B" stroke-width="1.6" marker-end="url(#a_S3)"/>
 <path class="edge e_S3_02 e_S3_03" d="M3100,1033.3 C3140,1033.3 3118,1043.0 3158,1043.0" fill="none" stroke="#00796B" stroke-width="1.6" marker-end="url(#a_S3)"/>
@@ -289,7 +296,7 @@ svg:has(#n_S6_05:hover) #n_S6_05, svg:has(#n_S6_05:hover) .nb_S6_05 { opacity: 1
 <text x="420" y="581" font-size="11.5" fill="#323F4B">Fix the outdated sentence in</text>
 <text x="420" y="595" font-size="11.5" fill="#323F4B">agent/README.md</text>
 </g>
-<g id="n_S2_03" class="node nb_S1 nb_S2_16">
+<g id="n_S2_03" class="node nb_S1 nb_S2_20 nb_S2_21">
 <title>S2-03 #18: App index from the Start Menu</title>
 <rect x="410" y="632" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="1.2"/>
 <text x="420" y="650" font-size="13" font-weight="700" fill="#1565C0">S2-03  #18  ✓</text>
@@ -322,11 +329,24 @@ svg:has(#n_S6_05:hover) #n_S6_05, svg:has(#n_S6_05:hover) .nb_S6_05 { opacity: 1
 <text x="670" y="741" font-size="11.5" fill="#323F4B">Command files and the recipe</text>
 <text x="670" y="755" font-size="11.5" fill="#323F4B">schema</text>
 </g>
+<g id="n_S2_20" class="node nb_S2_03 nb_S2_16">
+<title>S2-20 #82: Store apps in the app index</title>
+<rect x="660" y="780" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="3.2"/>
+<text x="670" y="798" font-size="13" font-weight="700" fill="#1565C0">S2-20  #82</text>
+<text x="670" y="815" font-size="11.5" fill="#323F4B">Store apps in the app index</text>
+</g>
+<g id="n_S2_21" class="node nb_S2_03 nb_S2_16">
+<title>S2-21 #83: A damaged shortcut must not stop the app index</title>
+<rect x="660" y="854" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="3.2"/>
+<text x="670" y="872" font-size="13" font-weight="700" fill="#1565C0">S2-21  #83</text>
+<text x="670" y="889" font-size="11.5" fill="#323F4B">A damaged shortcut must not</text>
+<text x="670" y="903" font-size="11.5" fill="#323F4B">stop the app index</text>
+</g>
 <g id="n_S2_05" class="node nb_S2_04 nb_S2_06">
 <title>S2-05 #20: Volume and key primitives</title>
-<rect x="660" y="780" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="3.2"/>
-<text x="670" y="798" font-size="13" font-weight="700" fill="#1565C0">S2-05  #20</text>
-<text x="670" y="815" font-size="11.5" fill="#323F4B">Volume and key primitives</text>
+<rect x="660" y="928" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#1565C0" stroke-width="3.2"/>
+<text x="670" y="946" font-size="13" font-weight="700" fill="#1565C0">S2-05  #20</text>
+<text x="670" y="963" font-size="11.5" fill="#323F4B">Volume and key primitives</text>
 </g>
 <g id="n_S2_09" class="node nb_S2_08 nb_S2_10 nb_S2_11">
 <title>S2-09 #24: Audio capture, VAD and microphone following</title>
@@ -394,7 +414,7 @@ svg:has(#n_S6_05:hover) #n_S6_05, svg:has(#n_S6_05:hover) .nb_S6_05 { opacity: 1
 <text x="1670" y="650" font-size="13" font-weight="700" fill="#1565C0">S2-14  #29</text>
 <text x="1670" y="667" font-size="11.5" fill="#323F4B">Listener state machine</text>
 </g>
-<g id="n_S2_16" class="node nb_S2_03 nb_S2_06 nb_S2_07 nb_S2_14 nb_S2_15 nb_S2_17 nb_S2_18">
+<g id="n_S2_16" class="node nb_S2_06 nb_S2_07 nb_S2_14 nb_S2_15 nb_S2_17 nb_S2_18 nb_S2_20 nb_S2_21">
 <title>S2-16 #31: Wiring it together: intent worker and the full voice path</title>
 <rect x="1910" y="632" width="190" height="58" rx="8" fill="#DCEBFB" stroke="#C62828" stroke-width="2.4"/>
 <text x="1920" y="650" font-size="13" font-weight="700" fill="#1565C0">S2-16  #31</text>

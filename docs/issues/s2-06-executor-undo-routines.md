@@ -25,6 +25,11 @@ the owner's main uses.
   id); `press_keys` only with a declared `undo: {keys: ...}`; `close_app`, `open_url` cannot be undone
 - routines: steps in order with a short pause; a failed step does not stop the others; one summary
   ("Routine DSA: 2 of 3 steps done; CLion not found"); undo reverses undoable steps newest first
+- (from S2-04's manual check) a launched app's window appears 0.5-1.2 s after `launch_app`
+  returns: wait for it before counting the launch done, focusing it or undoing it
+- (from S2-04's manual check) apps running as administrator (Event Viewer) can't be focused or
+  closed by Listen (Windows' UIPI): `close_window` must check `PostMessageW`'s result, so
+  `close_app` reports "that app runs as administrator" instead of counting the window as closed
 - tests with `FakeSystem` and the `FakeClock` (60 s expiry)
 
 ## Out of scope
