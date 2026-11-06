@@ -30,6 +30,7 @@ repository), each in its own window; they cannot talk to each other, so every st
 | 8 | owner | merges, only after step 7 says "Ready" |
 | 9 | github-ops + assistant | after every merge: clean up the branch, run `agent/.venv/Scripts/python docs/issues/draw_flowchart.py` (statuses, ready line, chart and critical path follow from GitHub), and add the issue's section to its stage's learning doc (`docs/learning/11-stage-2-voice-agent.tex` for stage 2), in the teach-from-zero format. The stage's last issue only polishes the doc |
 | 10 | issue-refresher + assistant | **major issues only** (see below): refresh the files of the issues that depend on the merged one, and draft follow-ups; the owner decides |
+| 11 | issue-recorder | the issue's **record** in `docs/records/`: a dated, sourced timeline of every step, decision, failure and correction, from the conversations, PRs, reviews, commits and CI |
 
 ## Keeping the plan honest
 
