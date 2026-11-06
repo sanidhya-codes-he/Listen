@@ -45,7 +45,7 @@ gh  issue  create  --title "..."  --label stage-2
 | `gh issue list --milestone "Stage 2: voice agent in the terminal"` | one milestone's issues |
 | `gh issue list --search "matcher in:title"` | GitHub search syntax |
 | `gh issue view 7` | read issue #7 in the terminal; add `--comments` for the discussion, `--web` for the browser |
-| `gh issue edit 7 --body-file docs/issues/s2-02-matcher.md` | replace the body (the "update before starting" rule) |
+| `gh issue edit 7 --body-file docs/issues/s2-02-matcher.md` | replace the body with the updated file (after a refresh) |
 | `gh issue edit 7 --add-label follow-up --remove-label docs` | change labels |
 | `gh issue edit 7 --add-sub-issue 8` / `--parent 4` / `--add-blocked-by 5` | link issues after creating them |
 | `gh issue edit 7 --add-assignee "@me"` | assign yourself (quotes needed: `@` is special in PowerShell) |
@@ -126,14 +126,24 @@ gh api 'repos/{owner}/{repo}/milestones/2' -X PATCH -f state=closed      # close
 
 ## The loop for every issue
 
+The full pipeline, with who does each step, is in [`issues/README.md`](issues/README.md). The
+commands you type:
+
 ```powershell
+# step 2: start
 gh issue view 7                                  # read the task
 git switch main; git pull                        # start from the latest main
 gh issue develop 7 --checkout --name 7-matcher   # linked branch, switched to it
-# ... work, commit (git add / git commit) ...
+# step 3: design together, then the code is written and committed on this branch
+# step 4: raise the PR
 git push -u origin 7-matcher
-gh pr create --base main --title "[S2-02] Normaliser and matcher" --body "Closes #7"
+gh pr create --base main --title "[S2-02] Normaliser and matcher" --body-file pr-body.md
 gh pr checks --watch
-gh pr merge --merge --delete-branch
+# step 7: after each round of fixes
+git push                                         # the same PR updates itself; CI runs again
+# step 8: merge, once the review says "Ready"
+gh pr merge 12 --merge --delete-branch
 git switch main; git pull
+# step 9: roadmap and chart (gh must be on PATH)
+agent\.venv\Scripts\python docs\issues\draw_flowchart.py
 ```

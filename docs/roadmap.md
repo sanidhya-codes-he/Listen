@@ -7,7 +7,8 @@ The build plan as a **DAG** (directed acyclic graph) of GitHub issues: an arrow 
 **After an issue closes**, run `agent/.venv/Scripts/python docs/issues/draw_flowchart.py`: it reads
 every issue's state from GitHub, updates the status table and the ready line, and redraws the chart.
 
-**Rule:** before starting any issue, re-read its file and update it to match decisions made since.
+**Rule:** one issue at a time through the pipeline in [`issues/README.md`](issues/README.md);
+after a major issue merges, its dependents' files are refreshed.
 
 ## Ready to start now
 Everything these depend on is done: S2-01, S2-05, S2-09, S2-13, S2-15. On the critical path: S2-09.
