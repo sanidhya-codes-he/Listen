@@ -50,7 +50,7 @@
 while the lessons are fresh, and the stage's last issue (S2-19) polishes the whole. Each section
 is taught from zero: the problem first, then the idea, an analogy and where it stops being true,
 the real code and real output, the usual mistakes, and a quick check (answers at the end). So far
-it covers the six issues finished first: M1, M2, M3, M4, M6 and S2-08.
+it covers nine issues: M1, M2, M3, M4, M5, M6, S2-08, S2-03 and S2-04.
 \end{abstract}
 
 \tableofcontents
@@ -348,6 +348,172 @@ safer?
 \end{quickcheck}
 
 % =====================================================================
+\section{M5: testing Ctrl+C and a fatal stop}
+\subsection{The problem}
+\texttt{run\_agent} can end in two ways besides bad settings: the owner presses Ctrl+C (exit 0),
+or the supervisor gives up on a module (exit 3). Both had only ever been tried by hand. Shutting
+down is where bugs hide: a thread left running keeps the process alive, or a log line goes missing.
+
+\subsection{The idea: press Ctrl+C from inside the test}
+When you press Ctrl+C, Python raises \texttt{KeyboardInterrupt} \emph{in the main thread}. The
+function \texttt{\_thread.interrupt\_main()} does exactly that from any thread. A
+\texttt{threading.Timer} calls it 0.2\,s after Listen prints that it is ready:
+\begin{lstlisting}[language=Python]
+def out(line):
+    lines.append(line)
+    if line.startswith("Listen is ready"):
+        timers.append(threading.Timer(0.2, _thread.interrupt_main))
+        timers[-1].start()
+\end{lstlisting}
+\noindent The test then checks the exit code (0), the printed \texttt{Stopping...}, the log line
+\texttt{stopped (exit code 0)}, and that no thread outlived \texttt{run\_agent}. The fatal test does
+the same with \texttt{App.fatal("shell stopped responding")} and expects 3. It calls
+\texttt{fatal} directly: the supervisor only checks every 5\,s, far too slow for a test.
+
+\begin{analogy}
+A fire drill: someone pulls the alarm on purpose, and you check that everyone leaves and the
+doors close. \emph{Where it breaks:} a real Ctrl+C travels from the console through Windows'
+signal handling; \texttt{interrupt\_main} skips that first part and starts at the
+\texttt{KeyboardInterrupt}.
+\end{analogy}
+
+\subsection{What the review found: a broken stop path stopped pytest itself}
+The owner broke the code on purpose (the wait loop returning at once). Instead of a red
+\texttt{FAILED}, the output was \texttt{!!! KeyboardInterrupt !!!} and the rest of the suite was
+skipped: the timer's interrupt had hit pytest, which treats it as you pressing Ctrl+C. Two guards
+were needed, and the second was found only by trying the first:
+\begin{center}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{When the interrupt arrives} & \textbf{Guard} \\
+\midrule
+after \texttt{run\_agent} returned & \texttt{timer.cancel()} in a \texttt{finally}: it never fires \\
+during the 1\,s shutdown & \texttt{except KeyboardInterrupt: pytest.fail(...)}: a normal, named failure \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\noindent ``No thread left behind'' became
+\texttt{assert set(threading.enumerate()) <= before}, comparing with the threads alive when the
+test started, so workers added in later stages are covered without editing the test.
+
+\begin{quickcheck}{6}
+Why compare with the threads alive at the start instead of checking that no thread is named
+\texttt{shell} or \texttt{supervisor}?
+\end{quickcheck}
+
+% =====================================================================
+\section{S2-03: the app index}
+\subsection{The problem}
+``Open Visual Studio Code'' needs a list of the apps installed on this PC and where each one is.
+Windows keeps one already: every app in the Start Menu is a \textbf{shortcut} (a \texttt{.lnk}
+file) in two folders, one for you and one for every user.
+
+\subsection{The idea}
+Scan both folders for \texttt{.lnk} files (yours first, so your shortcut wins over the shared one
+with the same name), and read where each points with Windows' scripting object through
+\textbf{pywin32}. Measured: 125 shortcuts in 0.50\,s, against 3.6\,s through PowerShell. Skip
+uninstallers and links whose program is gone. The result maps a name to an \texttt{App(name,
+shortcut, target)}.
+
+\subsection{Close enough: difflib similarity}
+People mis-say names and speech recognition mis-hears them. \texttt{difflib.SequenceMatcher}
+scores two strings from 0 to 1: $\textit{ratio} = 2M/T$, where $M$ is the number of matching
+characters and $T$ the two lengths added. Real values:
+\begin{center}
+\begin{tabular}{l l r r r l}
+\toprule
+\textbf{Heard} & \textbf{Best app} & $M$ & $T$ & \textbf{ratio} & \textbf{at 0.8} \\
+\midrule
+google chrome & Google Chrome & 13 & 26 & 1.00 & found \\
+goggle chrome & Google Chrome & 12 & 26 & 0.92 & found \\
+visual code & Visual Studio Code & 11 & 29 & 0.76 & refused \\
+chrome & Google Chrome & 6 & 19 & 0.63 & refused \\
+code & Visual Studio Code & 4 & 22 & 0.36 & refused \\
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent Below 0.8 the answer is ``not found'': opening the wrong app is worse than asking again.
+Short names like ``chrome'' get an \textbf{alias} instead (S2-01's command files).
+
+\begin{analogy}
+Your phone's contacts: ``call Mom'' looks up a name, and a small typo still finds her.
+\emph{Where it breaks:} autocorrect always guesses something; the index refuses to guess below
+0.8, because a wrong guess here launches or closes a real program.
+\end{analogy}
+
+\begin{caution}
+\textbf{A test that cannot see the line.} Every refused name in the first tests scored far below
+0.8 (0.29 to 0.56), so with the threshold changed to 0.6 all 17 tests still passed. Boundary
+tests need values \emph{just} under the line: ``visual code'' (0.76) and ``chrome'' (0.63) now fail
+at 0.6. PR \#79 was merged before this fix, so it came as PR \#81: the reason the pipeline now
+merges only after the review says ``Ready''.
+\end{caution}
+
+\paragraph{A limitation found.} ``Notepad'' is not found: on Windows 11 the built-in store apps
+have no \texttt{.lnk} in those folders.
+
+\begin{quickcheck}{7}
+Work out the ratio for ``crome'' against ``google chrome'' ($M = 5$). Is it found, and what would
+make ``crome'' work without lowering the threshold?
+\end{quickcheck}
+
+% =====================================================================
+\section{S2-04: the actions Listen can take}
+\subsection{The problem}
+Listen must \emph{do} things (open a web page, launch, focus or close an app) without ever
+becoming ``run any program'': the words come from a microphone, and anyone in the room can talk.
+
+\subsection{The idea: a registry of allowed actions}
+Each action is one small file in \texttt{actions/primitives/}, registered by a
+\textbf{decorator} that records the function and its parameter types in a table:
+\begin{lstlisting}[language=Python]
+@primitive("open_url", params={"url": str})
+def open_url(system, url):
+    if urlparse(url).scheme not in ("http", "https"):
+        raise ActionError("open_url: only http and https addresses can be opened")
+    ...
+\end{lstlisting}
+\noindent \texttt{run(name, system, **params)} refuses an unknown action, a missing, extra or
+wrong-typed parameter before anything happens. Apps are named, never given as a path: the name
+goes through the app index, so only installed Start Menu apps can be touched.
+
+\begin{analogy}
+A restaurant menu: the waiter takes orders only for dishes on it, and checks each order is
+complete. \emph{Where it breaks:} a new dish is one reviewed file away; a menu at a restaurant
+changes far more slowly than code.
+\end{analogy}
+
+\subsection{ctypes: calling Windows directly}
+Focusing and closing windows use Windows' own functions in \texttt{user32.dll}, through Python's
+standard \texttt{ctypes}, so no new library was needed. Every function's argument types are
+declared: otherwise a 64-bit window handle could be cut to 32 bits.
+
+\subsection{What the review found}
+\begin{itemize}[nosep]
+  \item \textbf{Launch the shortcut, not its program.} Starting the bare target dropped the
+        shortcut's arguments: Anaconda Prompt became a plain \texttt{cmd.exe}, Event Viewer
+        (an \texttt{.msc} file) failed; 49 of 120 apps on the owner's laptop were affected.
+        \texttt{ShellExecuteExW} starts the shortcut the way a double-click does and still
+        returns a process id. Checked for real: \texttt{cmd.exe /K ...activate.bat}.
+  \item \textbf{Python's own errors quote their input.} \texttt{os.startfile} puts the whole
+        address in its error message, and a traceback goes to the log. \texttt{open\_url} now
+        raises its own message \texttt{from None}.
+  \item \textbf{Some windows are out of reach.} Event Viewer runs as administrator; a normal
+        program may not close it (Windows calls this UIPI).
+\end{itemize}
+
+\begin{caution}
+\texttt{raise ActionError("...")} inside \texttt{except OSError:} still attaches the original
+error to the new one, and the traceback prints both, address included. \texttt{from None}
+leaves the original out.
+\end{caution}
+
+\begin{quickcheck}{8}
+Someone says ``open notepad.exe from C:\textbackslash Windows''. Which two parts of S2-04 stop
+Listen from running it?
+\end{quickcheck}
+
+% =====================================================================
 \section{Key takeaways so far}
 \begin{center}
 \renewcommand{\arraystretch}{1.2}
@@ -361,6 +527,9 @@ M3 & an exit code is a contract: one number, one meaning \\
 M4 & a test you never saw fail proves nothing; break the code to check it \\
 M6 & a folder's README changes in the same PR as the folder \\
 S2-08 & \texttt{pyproject.toml} says what is allowed; \texttt{uv.lock} says what was chosen \\
+M5 & a test that interrupts must make sure the interrupt cannot escape into pytest \\
+S2-03 & test a threshold with values just under it; refuse rather than guess wrong \\
+S2-04 & a menu of allowed actions; apps by name only; errors never quote what was said \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -382,6 +551,15 @@ S2-08 & \texttt{pyproject.toml} says what is allowed; \texttt{uv.lock} says what
   \item Plain \texttt{uv sync} quietly re-locks with whatever is newest that day, so CI tests
         versions nobody reviewed. \texttt{-{}-locked} refuses and fails, so the mistake is caught
         and the lock is updated deliberately in the PR.
+  \item The names catch only the threads stage 1 has. Later stages add workers (voice, storage)
+        with new names; comparing with the threads alive before the test covers them all, and
+        ignores pytest's own threads.
+  \item $2 \times 5 / (5 + 13) = 10/18 = 0.56$: refused. An alias \texttt{crome -> Google
+        Chrome} in a command file would match it exactly (1.0); so would the speech model hearing
+        it right.
+  \item There is no action that runs a path: \texttt{launch\_app} takes an app \emph{name}, and
+        the name must be found in the app index (Start Menu shortcuts only). A path is not a name
+        in that list, so it is refused with ``no installed app matches that name''.
 \end{enumerate}
 
 \end{document}
