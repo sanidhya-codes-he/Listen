@@ -21,6 +21,8 @@ path meets the 1.5 s budget.
   `IntentNotMatched` / `ConfirmationRequested`; continuous-mode unmatched -> `HeardInContinuous`
 - housekeeping worker: every 2 s, microphone change and command-file reload; the app index's `rebuild()` daily and
   on the command "refresh apps" (moved here from S2-03)
+- the app index gets its aliases from the command library (S2-01) and its match threshold (0.8, a
+  constant in S2-03) from `settings.yaml` (spec §3.4 says it is tunable; review of PR #79)
 - start-up order from §4.7 (settings -> commands -> app index -> restore ducked volumes -> models ->
   microphone -> threads -> "Listen is ready"); shut-down order from §4.7
 - the terminal shell's lines from §4.8 (`heard "..." (0.93)`, `match ...`, `done ...`,
