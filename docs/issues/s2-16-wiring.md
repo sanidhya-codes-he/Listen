@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Stage | S2 voice agent in the terminal |
-| Depends on | S2-02, S2-03, S2-06, S2-07, S2-14, S2-15, S2-20, S2-21 |
+| Depends on | S2-02, S2-03, S2-06, S2-07, S2-14, S2-15, S2-20 |
 | Labels | stage-2, agent |
 | Spec | §4.1 (threads), §4.3 (events), §4.6 (latency), §4.7 (start-up order), §4.8 (terminal lines) |
 | Status | todo |
@@ -17,12 +17,24 @@ Each part was built and tested alone. This issue connects them through the bus a
 path meets the 1.5 s budget.
 
 ## Scope
+(updated 2026-11-07 after S2-03 and S2-04 merged (PR #79, #80, #81): who builds the real app index
+and system object, and what a rebuild costs)
+- build the real `AppIndex(start_menu_folders(), aliases=..., threshold=...)` and give it to
+  `WindowsSystem(apps)` (`actions/windows.py`); S2-04 injects the index as `system.apps`, and
+  nothing builds either one yet. Call `load_primitives()` once at start-up: the registry does not
+  import the primitive files by itself
 - intent worker: `Transcribed` -> normalise, match, decide (S2-07) -> `IntentMatched` /
   `IntentNotMatched` / `ConfirmationRequested`; continuous-mode unmatched -> `HeardInContinuous`
 - housekeeping worker: every 2 s, microphone change and command-file reload; the app index's `rebuild()` daily and
   on the command "refresh apps" (moved here from S2-03)
 - the app index gets its aliases from the command library (S2-01) and its match threshold (0.8, a
-  constant in S2-03) from `settings.yaml` (spec §3.4 says it is tunable; review of PR #79)
+  constant `MATCH_THRESHOLD` in `intent/app_index.py`) from `settings.yaml` (spec §3.4 says it is
+  tunable; review of PR #79)
+- `rebuild()` cost on the owner's laptop: 0.2-0.4 s warm, about 4 s on the first, cold run (PR #79
+  review), and S2-20 will add more. A first build at start-up delays "Listen is ready": put it in
+  the start-up timing. Daily and "refresh apps" rebuilds run on the housekeeping worker; the
+  review confirmed `rebuild()` works from a worker thread, and it swaps the whole dict in one
+  assignment, so `find()` on the intent worker never sees a half-built index
 - start-up order from §4.7 (settings -> commands -> app index -> restore ducked volumes -> models ->
   microphone -> threads -> "Listen is ready"); shut-down order from §4.7
 - the terminal shell's lines from §4.8 (`heard "..." (0.93)`, `match ...`, `done ...`,
