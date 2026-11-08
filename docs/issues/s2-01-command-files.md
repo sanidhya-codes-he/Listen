@@ -84,16 +84,16 @@ refusing the dangerous key combinations (S2-05); checking that `params` use only
 pattern (S2-02: a missing `{target}` is filled from `defaults`, so the matcher is where that is known).
 
 ## Done when
-- [ ] a broken entry is skipped with `core.yaml:14: ...`, the other entries still load
-- [ ] an unparseable file (and a file with a duplicate key) keeps its last good version in memory
-- [ ] `listen commands check` exits 0 on the starter files, 1 on a broken copy
-- [ ] tests: valid file, each kind of invalid entry (unknown key, bad `risk`, unknown action, bad
+- [x] a broken entry is skipped with `core.yaml:14: ...`, the other entries still load
+- [x] an unparseable file (and a file with a duplicate key) keeps its last good version in memory
+- [x] `listen commands check` exits 0 on the starter files, 1 on a broken copy
+- [x] tests: valid file, each kind of invalid entry (unknown key, bad `risk`, unknown action, bad
       slot name, `press_keys` without `when_app`, both `action` and `steps`), duplicate id, defaults
       pointing nowhere, unparseable file, reload on change, deleted file, no half-loaded read
-- [ ] every primitive name in the schema equals the allowlist in §3.5 (test against a list written
+- [x] every primitive name in the schema equals the allowlist in §3.5 (test against a list written
       in the test; S2-04 later adds the check against the real registry)
-- [ ] the schema itself is valid: `Draft202012Validator.check_schema` in a test
-- [ ] all existing tests pass without edits (the `.line` change is invisible to settings)
+- [x] the schema itself is valid: `Draft202012Validator.check_schema` in a test
+- [x] all existing tests pass without edits (the `.line` change is invisible to settings)
 
 ## How to test
 ```
