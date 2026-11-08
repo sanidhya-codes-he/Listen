@@ -1,0 +1,40 @@
+# core: apps and volume. Check edits with: listen commands check
+version: 1
+
+# short spoken names -> the app's name in the Start Menu
+aliases:
+  chrome: Google Chrome
+  edge: Microsoft Edge
+  code: Visual Studio Code
+  vs code: Visual Studio Code
+
+commands:
+  - id: open
+    patterns: ["open {app}", "launch {app}", "start {app}"]
+    action: launch_app
+
+  - id: focus
+    patterns: ["switch to {app}", "go to {app}", "focus {app}"]
+    action: focus_app
+
+  - id: close
+    patterns: ["close {app}", "quit {app}", "exit {app}"]
+    action: close_app          # in continuous mode Listen asks first (spec §3.7)
+
+  - id: volume_set
+    patterns: ["volume {number}", "set volume to {number}", "set the volume to {number}"]
+    action: set_volume
+
+  - id: volume_up
+    patterns: ["volume up", "louder", "turn it up"]
+    action: change_volume
+    params: {step: 10}
+
+  - id: volume_down
+    patterns: ["volume down", "quieter", "turn it down"]
+    action: change_volume
+    params: {step: -10}
+
+  - id: mute
+    patterns: ["mute", "unmute"]
+    action: toggle_mute

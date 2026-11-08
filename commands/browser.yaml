@@ -1,0 +1,35 @@
+# browser: places on the web, and the commands that open them
+version: 1
+
+# each target: a URL per verb ({query} is filled from the sentence) and a home page
+targets:
+  google:
+    search: "https://www.google.com/search?q={query}"
+    home: "https://www.google.com"
+  youtube:
+    play: "https://www.youtube.com/results?search_query={query}"
+    search: "https://www.youtube.com/results?search_query={query}"
+    home: "https://www.youtube.com"
+  github:
+    search: "https://github.com/search?q={query}"
+    home: "https://github.com"
+  wikipedia:
+    search: "https://en.wikipedia.org/w/index.php?search={query}"
+    home: "https://en.wikipedia.org"
+
+# the target a verb uses when the sentence names none
+defaults:
+  search: google
+  play: youtube
+
+commands:
+  - id: search
+    patterns: ["search {query} on {target}", "search {target} for {query}", "search {query}",
+               "look up {query}", "google {query}"]
+    action: open_url
+    url_from: search
+
+  - id: open_site
+    patterns: ["open {target}", "go to {target}"]
+    action: open_url
+    url_from: home

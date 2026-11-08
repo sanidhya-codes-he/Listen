@@ -1,0 +1,13 @@
+# media: playing things
+version: 1
+
+targets:
+  spotify:
+    play: "https://open.spotify.com/search/{query}"
+    home: "https://open.spotify.com"
+
+commands:
+  - id: play
+    patterns: ["play {query} on {target}", "play {query}"]
+    action: open_url
+    url_from: play             # youtube unless the sentence names a target (browser.yaml)
