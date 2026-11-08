@@ -6,7 +6,7 @@
 | Depends on | M2 |
 | Labels | stage-2, agent |
 | Spec | §3.1, §3.2 (slot names), §3.5 (primitive names), §3.7 (continuous default), §3.8 (routines format), Doc 03 |
-| Status | todo |
+| Status | in progress |
 
 ## Goal
 Commands live in YAML files in `commands/`, every entry is checked against one schema, and
@@ -41,8 +41,8 @@ uses uv)
   like the editor and like the duplicate-key message) for every mapping. It still equals a plain
   dict, so the settings code and tests are untouched. Say in the PR why this belongs here: S2-01
   is the first caller that needs lines for entries, not only for duplicates.
-- `listen_agent/intent/` has only a README today: add `__init__.py` (setuptools `find` skips
-  folders without one). `intent/library.py`: load `commands/*.yaml` **sorted by file name** with
+- `listen_agent/intent/` already exists (S2-03 added `__init__.py` and `app_index.py`).
+  `intent/library.py`: load `commands/*.yaml` **sorted by file name** with
   `load_yaml`; validate each target, default and command on its own against its `$defs`;
   **skip invalid entries with a warning `core.yaml:14: commands[2].params: ...`** (file name as M2
   prints it, the line of the entry, the path inside it, no pattern text beyond the schema message);
@@ -115,10 +115,18 @@ uv run listen commands check
 - **Dangerous keys**: the schema only makes `when_app` mandatory for `press_keys`; the blocked
   combinations are one runtime check owned by S2-05, so there is one list, not two.
 
-## Questions for the owner
-- What are the three things in your "dsa" routine (the spec's example mentions CLion)? Which
-  apps and which URLs? Recommendation: tell the assistant before the PR; until then use
-  `launch_app` for CLion and `open_url` for two sites you name.
+## Decisions (made 2026-11-08, step 3 with the owner)
+- **A warning gives the entry's line** (where `- id: ...` starts), not the exact line of the wrong
+  key: the owner chose this over per-key lines (option B: about 15 more lines for an exact line
+  and a "did you mean"). jsonschema's own messages are translated into plain words where they are
+  unreadable (its "not valid under any of the given schemas" dumps the whole entry).
+- **Doc 03's fields are in the schema**: a top-level `version: 1` and a command's `url_from`
+  (the target's URL for this verb: `url_from: search`); the scope list above had missed them, and
+  Doc 03's own example would have been refused.
+- **A deleted file's commands disappear** at the next check; a broken file keeps its last good
+  version (deleting is deliberate, a broken file is usually a half-saved one).
+- **The "dsa" routine** uses placeholders until the owner names the real ones: CLion, LeetCode
+  and GeeksforGeeks, editable in `commands/routines.yaml`.
 
 ## Learning
 JSON Schema; validating data at the edge; "skip the bad, keep the good"; mtime-based reloading; a
