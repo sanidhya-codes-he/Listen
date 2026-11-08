@@ -16,8 +16,22 @@ class _DuplicateKey(Exception):
         self.line = line
 
 
+class LinedDict(dict):
+    """A mapping read from YAML; .line is the line it starts on (from 1, like editors)."""
+
+    line = 0
+
+
 class _StrictLoader(yaml.SafeLoader):
-    """SafeLoader, except that a key repeated in the same mapping is an error."""
+    """SafeLoader, except that a key repeated in the same mapping is an error, and every mapping
+    is a LinedDict (command files report problems as file:line)."""
+
+    def construct_lined_map(self, node):
+        # the same two steps as SafeLoader's own map constructor, with LinedDict for dict
+        data = LinedDict()
+        data.line = node.start_mark.line + 1
+        yield data
+        data.update(self.construct_mapping(node))
 
     def construct_mapping(self, node, deep=False):
         seen = set()
@@ -32,6 +46,9 @@ class _StrictLoader(yaml.SafeLoader):
                 raise _DuplicateKey(key, key_node.start_mark.line + 1)
             seen.add(key)
         return super().construct_mapping(node, deep=deep)
+
+
+_StrictLoader.add_constructor("tag:yaml.org,2002:map", _StrictLoader.construct_lined_map)
 
 
 def load_yaml(path: Path) -> object:

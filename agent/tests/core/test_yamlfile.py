@@ -65,3 +65,18 @@ def test_file_in_another_encoding_is_a_yamlfile_error(tmp_path):
 def test_missing_file_is_an_error_not_empty(tmp_path):
     with pytest.raises(YamlFileError, match="can't read it"):
         load_yaml(tmp_path / "missing.yaml")
+
+
+def test_every_mapping_remembers_the_line_it_starts_on(tmp_path):
+    # command files report problems as file:line (S2-01)
+    data = load_yaml(write(tmp_path, "version: 1\ncommands:\n  - id: search\n"
+                                     "    params: {url: x}\n", name="core.yaml"))
+    entry = data["commands"][0]
+    assert (data.line, entry.line, entry["params"].line) == (1, 3, 4)
+
+
+def test_a_mapping_with_a_line_still_equals_a_plain_dict(tmp_path):
+    # so settings and every existing caller see no difference
+    data = load_yaml(write(tmp_path, "thresholds:\n  match: 0.8\n"))
+    assert data == {"thresholds": {"match": 0.8}}
+    assert isinstance(data["thresholds"], dict)
