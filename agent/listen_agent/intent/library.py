@@ -178,6 +178,28 @@ class CommandFiles:
 
 
 
+def check_commands(folder: Path = COMMANDS_DIR, out=print) -> int:
+    """`listen commands check`: print every problem and a summary; 1 if there are any."""
+    # printed here, once: the warnings CommandFiles logs would repeat each one on stderr
+    log.disabled = True
+    try:
+        library = CommandFiles(folder).library
+    finally:
+        log.disabled = False
+    for problem in library.problems:
+        out(problem)
+    found = (f"{_count(len(library.commands), 'command')}, "
+             f"{_count(len(library.targets), 'target')} in "
+             f"{_count(len(list(folder.glob('*.yaml'))), 'file')}")
+    problems = _count(len(library.problems), "problem") if library.problems else "no problems"
+    out(f"{found}: {problems}")
+    return 1 if library.problems else 0
+
+
+def _count(n: int, word: str) -> str:
+    return f"{n} {word}" + ("" if n == 1 else "s")
+
+
 def _command_key(entry: Any, index: int) -> Any:
     # its id, or its position when it has none (the schema then reports the missing id)
     return entry.get("id", f"#{index + 1}") if isinstance(entry, dict) else f"#{index + 1}"
