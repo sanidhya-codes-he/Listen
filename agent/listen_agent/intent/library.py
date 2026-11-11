@@ -211,18 +211,20 @@ def _command_key(entry: Any, index: int) -> Any:
     return entry.get("id", f"#{index + 1}") if isinstance(entry, dict) else f"#{index + 1}"
 
 
-# spec §3.6, §3.7: defaults for a command whose file doesn't say; any command overrides them in YAML
-ACTION_DEFAULTS = {"close_app": {"risk": "high", "continuous": "confirm"}}
+# spec §3.6: actions that are high risk when the file doesn't say (a routine's action is None: low)
+ACTION_RISK = {"close_app": "high"}
 
 
 def _command_from(file: str, entry: dict) -> Command:
     action = entry.get("action")
-    preset = ACTION_DEFAULTS.get(action, {})  # a routine's action is None: plain defaults (§3.7)
+    risk = entry.get("risk", ACTION_RISK.get(action, "low"))
     return Command(
         file=file, line=entry.line, id=entry["id"], patterns=tuple(entry["patterns"]),
         action=action, params=dict(entry.get("params", {})), url_from=entry.get("url_from"),
         steps=tuple(dict(step) for step in entry.get("steps", [])),
         when_app=entry.get("when_app"), focus_first=entry.get("focus_first", False),
-        risk=entry.get("risk", preset.get("risk", "low")),
-        continuous=entry.get("continuous", preset.get("continuous", "allow")),
+        risk=risk,
+        # owner, 2026-11-12: every high-risk command asks first in continuous mode (spec §3.7),
+        # so a new risky command needs only `risk: high` in YAML
+        continuous=entry.get("continuous", "confirm" if risk == "high" else "allow"),
         undo=entry.get("undo"))

@@ -53,8 +53,8 @@ uses uv)
   messages, so S2-15/S2-16 can show the pop-up with file:line, §9.1). Log through
   `logging.getLogger("intent")`.
   - defaults filled here, not in the schema: `risk: low`; `continuous: allow`, except
-    **`close_app` commands default to `risk: high`** (§3.6) **and `continuous: confirm`** (§3.7);
-    routines stay `low` and `allow`
+    **`close_app` commands default to `risk: high`** (§3.6), and **every high-risk command
+    defaults to `continuous: confirm`** (§3.7); routines stay `low` and `allow` unless marked high
   - cross-file rules after merging, each a skipped entry with a warning naming both places:
     duplicate command `id`; duplicate target name (the first file in name order wins);
     a `defaults` entry whose target does not exist
@@ -130,9 +130,10 @@ uv run listen commands check
   and GeeksforGeeks, editable in `commands/routines.yaml`.
 
 ## Decisions (made 2026-11-12, review of PR #85)
-- **Per-action defaults live in one table**, `ACTION_DEFAULTS` in `intent/library.py`
-  (`close_app`: `risk: high`, `continuous: confirm`); any command overrides them in YAML. A future
-  risky primitive is one line there.
+- **Confirmation follows risk** (the owner's rule): every `risk: high` command defaults to
+  `continuous: confirm`, so a new risky command needs only `risk: high` in YAML, no code. Which
+  actions are high risk when the file doesn't say is one table, `ACTION_RISK` in
+  `intent/library.py` (`close_app`, spec §3.6). A command can still set `continuous` itself.
 - **A target, default or alias reports the line of its key** (the YAML loader now records
   `key_lines` too): still option A, an entry's own line. A command written as plain text instead
   of a mapping still reports its section's line (a limitation: lists don't record item lines).

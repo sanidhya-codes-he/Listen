@@ -71,6 +71,17 @@ def test_close_app_asks_first_in_continuous_mode_but_routines_do_not(tmp_path):
     assert tidy.steps == ({"action": "close_app", "params": {"app": "x"}},)
 
 
+def test_any_high_risk_command_asks_first_in_continuous_mode(tmp_path):
+    # owner, 2026-11-12: confirmation follows risk, so a new risky command is only YAML
+    write(tmp_path, "core.yaml", command_file(
+        "  - id: wipe\n    patterns: [wipe]\n    action: toggle_mute\n    risk: high\n",
+        "  - id: tidy\n    patterns: [tidy]\n    steps: [{action: toggle_mute}]\n    risk: high\n",
+        "  - id: open\n    patterns: ['close {app}']\n    action: close_app\n    risk: low\n"))
+    wipe, tidy, open_ = CommandFiles(tmp_path).library.commands
+    assert (wipe.continuous, tidy.continuous) == ("confirm", "confirm")
+    assert open_.continuous == "allow"  # close_app made low risk no longer asks
+
+
 def test_a_file_overrides_the_action_defaults(tmp_path):
     write(tmp_path, "core.yaml", command_file(
         "  - id: close\n    patterns: ['close {app}']\n    action: close_app\n",
