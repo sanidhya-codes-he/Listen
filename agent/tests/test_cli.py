@@ -64,6 +64,14 @@ def test_commands_check_lists_each_problem_and_exits_1(tmp_path, monkeypatch, ca
     assert err == ""  # each problem once, not again through logging
 
 
+def test_commands_check_on_a_missing_folder_fails(tmp_path, monkeypatch, capsys):
+    # a moved checkout must not report "no problems" while Listen would match nothing
+    missing = tmp_path / "commands"
+    monkeypatch.setattr("listen_agent.__main__.COMMANDS_DIR", missing)
+    assert main(["commands", "check"]) == 1
+    assert capsys.readouterr().out.strip() == f"{missing}: no such folder"
+
+
 def test_commands_alone_prints_its_help(capsys):
     assert main(["commands"]) == 0
     assert "check" in capsys.readouterr().out

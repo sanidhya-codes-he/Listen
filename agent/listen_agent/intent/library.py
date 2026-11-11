@@ -158,13 +158,16 @@ class CommandFiles:
             if section not in data or section in skipped:
                 continue
             entries = data[section]
+            # option A (owner, 2026-11-08): each entry's own line: where a command starts, or the
+            # line of a target's, default's or alias's key; else its section's first line
             if section == "commands":  # a list: key each entry by its id
-                pairs = [(_command_key(entry, index), entry) for index, entry in enumerate(entries)]
+                pairs = [(_command_key(entry, index), entry, getattr(entry, "line", 0))
+                         for index, entry in enumerate(entries)]
             else:
-                pairs = list(entries.items())
-            for key, entry in pairs:
-                # option A (owner, 2026-11-08): the entry's own line, else its section's
-                at = f"{name}:{getattr(entry, 'line', 0) or getattr(entries, 'line', 1)}"
+                key_lines = getattr(entries, "key_lines", {})
+                pairs = [(key, entry, key_lines.get(key, 0)) for key, entry in entries.items()]
+            for key, entry, line in pairs:
+                at = f"{name}:{line or getattr(entries, 'line', 1)}"
                 errors = "; ".join(_explain(error) for error in check.iter_errors(entry))
                 if errors:
                     problems.append(f"{at}: {label} {key!r}: {errors}")
@@ -180,6 +183,9 @@ class CommandFiles:
 
 def check_commands(folder: Path = COMMANDS_DIR, out=print) -> int:
     """`listen commands check`: print every problem and a summary; 1 if there are any."""
+    if not folder.is_dir():  # the agent loads nothing here; the check must not say "no problems"
+        out(f"{folder}: no such folder")
+        return 1
     # printed here, once: the warnings CommandFiles logs would repeat each one on stderr
     log.disabled = True
     try:
@@ -205,14 +211,18 @@ def _command_key(entry: Any, index: int) -> Any:
     return entry.get("id", f"#{index + 1}") if isinstance(entry, dict) else f"#{index + 1}"
 
 
+# spec §3.6, §3.7: defaults for a command whose file doesn't say; any command overrides them in YAML
+ACTION_DEFAULTS = {"close_app": {"risk": "high", "continuous": "confirm"}}
+
+
 def _command_from(file: str, entry: dict) -> Command:
     action = entry.get("action")
+    preset = ACTION_DEFAULTS.get(action, {})  # a routine's action is None: plain defaults (§3.7)
     return Command(
         file=file, line=entry.line, id=entry["id"], patterns=tuple(entry["patterns"]),
         action=action, params=dict(entry.get("params", {})), url_from=entry.get("url_from"),
         steps=tuple(dict(step) for step in entry.get("steps", [])),
         when_app=entry.get("when_app"), focus_first=entry.get("focus_first", False),
-        risk=entry.get("risk", "low"),
-        # spec §3.7: close_app asks first in continuous mode; routines run immediately
-        continuous=entry.get("continuous", "confirm" if action == "close_app" else "allow"),
+        risk=entry.get("risk", preset.get("risk", "low")),
+        continuous=entry.get("continuous", preset.get("continuous", "allow")),
         undo=entry.get("undo"))

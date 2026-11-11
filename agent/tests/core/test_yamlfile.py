@@ -75,6 +75,11 @@ def test_every_mapping_remembers_the_line_it_starts_on(tmp_path):
     assert (data.line, entry.line, entry["params"].line) == (1, 3, 4)
 
 
+def test_a_mapping_also_remembers_each_keys_line(tmp_path):
+    data = load_yaml(write(tmp_path, "defaults:\n  search: google\n  play: youtube\n"))
+    assert data["defaults"].key_lines == {"search": 2, "play": 3}
+
+
 def test_a_mapping_with_a_line_still_equals_a_plain_dict(tmp_path):
     # so settings and every existing caller see no difference
     data = load_yaml(write(tmp_path, "thresholds:\n  match: 0.8\n"))

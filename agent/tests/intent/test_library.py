@@ -67,7 +67,16 @@ def test_close_app_asks_first_in_continuous_mode_but_routines_do_not(tmp_path):
         "    steps: [{action: close_app, params: {app: x}}]\n"))
     close, tidy = CommandFiles(tmp_path).library.commands
     assert (close.continuous, tidy.continuous) == ("confirm", "allow")
+    assert (close.risk, tidy.risk) == ("high", "low")  # spec §3.6: closing an app is high risk
     assert tidy.steps == ({"action": "close_app", "params": {"app": "x"}},)
+
+
+def test_a_file_overrides_the_action_defaults(tmp_path):
+    write(tmp_path, "core.yaml", command_file(
+        "  - id: close\n    patterns: ['close {app}']\n    action: close_app\n",
+        "    risk: low\n    continuous: allow\n"))
+    [close] = CommandFiles(tmp_path).library.commands
+    assert (close.risk, close.continuous) == ("low", "allow")
 
 
 BROKEN = {
@@ -132,6 +141,37 @@ def test_a_default_pointing_at_no_target_is_skipped(tmp_path):
     library = CommandFiles(tmp_path).library
     assert library.defaults == {}
     assert library.problems == ("core.yaml:2: default 'search': no target named 'gogle'; skipped",)
+
+
+def test_a_scalar_entry_reports_its_own_line(tmp_path):
+    # a default or alias is one line; its warning names that line, not the section's first
+    write(tmp_path, "core.yaml", "targets:\n  google: {home: 'https://g'}\n"
+                                 "defaults:\n  search: google\n  play: nowhere\n")
+    assert CommandFiles(tmp_path).library.problems == (
+        "core.yaml:5: default 'play': no target named 'nowhere'; skipped",)
+
+
+def test_an_empty_section_is_reported_and_the_rest_still_loads(tmp_path):
+    # "commands:" with nothing after it: a half-typed save
+    write(tmp_path, "a.yaml", command_file(GOOD))
+    write(tmp_path, "core.yaml", "commands:\n")
+    files = CommandFiles(tmp_path)
+    assert ids(files) == ["hello"]
+    [problem] = files.library.problems
+    assert problem.startswith("core.yaml:1: commands:")
+
+
+def test_a_deleted_file_is_forgotten(tmp_path):
+    # re-created broken later, it must not bring back its old commands
+    path = write(tmp_path, "a.yaml", command_file(GOOD))
+    files = CommandFiles(tmp_path)
+    path.unlink()
+    files.reload_if_changed()
+    path.write_text("commands: [\n", encoding="utf-8")
+    files.reload_if_changed()
+    assert ids(files) == []
+    [problem] = files.library.problems
+    assert not problem.endswith("; using the last good version")
 
 
 def test_an_unknown_section_is_reported(tmp_path):

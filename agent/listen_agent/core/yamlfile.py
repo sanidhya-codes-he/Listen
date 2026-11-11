@@ -17,9 +17,11 @@ class _DuplicateKey(Exception):
 
 
 class LinedDict(dict):
-    """A mapping read from YAML; .line is the line it starts on (from 1, like editors)."""
+    """A mapping read from YAML; .line is the line it starts on (from 1, like editors), and
+    .key_lines the line of each key."""
 
     line = 0
+    key_lines: dict = {}  # replaced per mapping by the loader; never changed in place
 
 
 class _StrictLoader(yaml.SafeLoader):
@@ -32,6 +34,9 @@ class _StrictLoader(yaml.SafeLoader):
         data.line = node.start_mark.line + 1
         yield data
         data.update(self.construct_mapping(node))
+        # after construct_mapping, which reports a duplicate or unhashable key first
+        data.key_lines = {self.construct_object(key): key.start_mark.line + 1
+                          for key, _ in node.value}
 
     def construct_mapping(self, node, deep=False):
         seen = set()
