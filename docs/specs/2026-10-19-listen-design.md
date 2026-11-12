@@ -159,8 +159,9 @@ Commands run **without the wake word**. Guardrails apply only in continuous mode
 
 1. Standalone sentence: surrounded by short silence and **at most 8 words**.
 2. Stricter thresholds than wake-word mode.
-3. Per-command `continuous: allow | confirm | block`. Default `allow`; **`close_app` commands
-   default to `confirm`**; **routines run immediately** (`allow`).
+3. Per-command `continuous: allow | confirm | block`. Default `allow`; **every `risk: high`
+   command defaults to `confirm`** (`close_app` is high risk by default, §3.6); **routines run
+   immediately** (`allow`) unless marked high.
 4. Busy-room switch: off by hotkey or "continuous off"; automatic fallback to wake-word mode when
    speech fills more than about 60% of the last minute.
 

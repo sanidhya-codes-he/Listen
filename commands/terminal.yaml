@@ -1,0 +1,22 @@
+# terminal: keys for Windows Terminal. press_keys only works inside the app named in when_app
+version: 1
+
+commands:
+  - id: terminal_new_tab
+    patterns: ["new tab", "open a new tab"]
+    action: press_keys
+    when_app: Windows Terminal
+    params: {keys: "ctrl+shift+t"}
+    undo: {keys: "ctrl+shift+w"}
+
+  - id: terminal_next_tab
+    patterns: ["next tab"]
+    action: press_keys
+    when_app: Windows Terminal
+    params: {keys: "ctrl+tab"}
+
+  - id: terminal_split
+    patterns: ["split pane", "split the terminal"]
+    action: press_keys
+    when_app: Windows Terminal
+    params: {keys: "alt+shift+d"}

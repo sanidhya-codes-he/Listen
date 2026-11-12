@@ -6,7 +6,7 @@
 | Depends on | M2 |
 | Labels | stage-2, agent |
 | Spec | §3.1, §3.2 (slot names), §3.5 (primitive names), §3.7 (continuous default), §3.8 (routines format), Doc 03 |
-| Status | todo |
+| Status | in progress |
 
 ## Goal
 Commands live in YAML files in `commands/`, every entry is checked against one schema, and
@@ -41,8 +41,8 @@ uses uv)
   like the editor and like the duplicate-key message) for every mapping. It still equals a plain
   dict, so the settings code and tests are untouched. Say in the PR why this belongs here: S2-01
   is the first caller that needs lines for entries, not only for duplicates.
-- `listen_agent/intent/` has only a README today: add `__init__.py` (setuptools `find` skips
-  folders without one). `intent/library.py`: load `commands/*.yaml` **sorted by file name** with
+- `listen_agent/intent/` already exists (S2-03 added `__init__.py` and `app_index.py`).
+  `intent/library.py`: load `commands/*.yaml` **sorted by file name** with
   `load_yaml`; validate each target, default and command on its own against its `$defs`;
   **skip invalid entries with a warning `core.yaml:14: commands[2].params: ...`** (file name as M2
   prints it, the line of the entry, the path inside it, no pattern text beyond the schema message);
@@ -53,7 +53,8 @@ uses uv)
   messages, so S2-15/S2-16 can show the pop-up with file:line, §9.1). Log through
   `logging.getLogger("intent")`.
   - defaults filled here, not in the schema: `risk: low`; `continuous: allow`, except
-    **`close_app` commands default to `confirm`** (§3.7); routines stay `allow`
+    **`close_app` commands default to `risk: high`** (§3.6), and **every high-risk command
+    defaults to `continuous: confirm`** (§3.7); routines stay `low` and `allow` unless marked high
   - cross-file rules after merging, each a skipped entry with a warning naming both places:
     duplicate command `id`; duplicate target name (the first file in name order wins);
     a `defaults` entry whose target does not exist
@@ -84,16 +85,16 @@ refusing the dangerous key combinations (S2-05); checking that `params` use only
 pattern (S2-02: a missing `{target}` is filled from `defaults`, so the matcher is where that is known).
 
 ## Done when
-- [ ] a broken entry is skipped with `core.yaml:14: ...`, the other entries still load
-- [ ] an unparseable file (and a file with a duplicate key) keeps its last good version in memory
-- [ ] `listen commands check` exits 0 on the starter files, 1 on a broken copy
-- [ ] tests: valid file, each kind of invalid entry (unknown key, bad `risk`, unknown action, bad
+- [x] a broken entry is skipped with `core.yaml:14: ...`, the other entries still load
+- [x] an unparseable file (and a file with a duplicate key) keeps its last good version in memory
+- [x] `listen commands check` exits 0 on the starter files, 1 on a broken copy
+- [x] tests: valid file, each kind of invalid entry (unknown key, bad `risk`, unknown action, bad
       slot name, `press_keys` without `when_app`, both `action` and `steps`), duplicate id, defaults
       pointing nowhere, unparseable file, reload on change, deleted file, no half-loaded read
-- [ ] every primitive name in the schema equals the allowlist in §3.5 (test against a list written
+- [x] every primitive name in the schema equals the allowlist in §3.5 (test against a list written
       in the test; S2-04 later adds the check against the real registry)
-- [ ] the schema itself is valid: `Draft202012Validator.check_schema` in a test
-- [ ] all existing tests pass without edits (the `.line` change is invisible to settings)
+- [x] the schema itself is valid: `Draft202012Validator.check_schema` in a test
+- [x] all existing tests pass without edits (the `.line` change is invisible to settings)
 
 ## How to test
 ```
@@ -115,10 +116,29 @@ uv run listen commands check
 - **Dangerous keys**: the schema only makes `when_app` mandatory for `press_keys`; the blocked
   combinations are one runtime check owned by S2-05, so there is one list, not two.
 
-## Questions for the owner
-- What are the three things in your "dsa" routine (the spec's example mentions CLion)? Which
-  apps and which URLs? Recommendation: tell the assistant before the PR; until then use
-  `launch_app` for CLion and `open_url` for two sites you name.
+## Decisions (made 2026-11-08, step 3 with the owner)
+- **A warning gives the entry's line** (where `- id: ...` starts), not the exact line of the wrong
+  key: the owner chose this over per-key lines (option B: about 15 more lines for an exact line
+  and a "did you mean"). jsonschema's own messages are translated into plain words where they are
+  unreadable (its "not valid under any of the given schemas" dumps the whole entry).
+- **Doc 03's fields are in the schema**: a top-level `version: 1` and a command's `url_from`
+  (the target's URL for this verb: `url_from: search`); the scope list above had missed them, and
+  Doc 03's own example would have been refused.
+- **A deleted file's commands disappear** at the next check; a broken file keeps its last good
+  version (deleting is deliberate, a broken file is usually a half-saved one).
+- **The "dsa" routine** uses placeholders until the owner names the real ones: CLion, LeetCode
+  and GeeksforGeeks, editable in `commands/routines.yaml`.
+
+## Decisions (made 2026-11-12, review of PR #85)
+- **Confirmation follows risk** (the owner's rule): every `risk: high` command defaults to
+  `continuous: confirm`, so a new risky command needs only `risk: high` in YAML, no code. Which
+  actions are high risk when the file doesn't say is one table, `ACTION_RISK` in
+  `intent/library.py` (`close_app`, spec §3.6). A command can still set `continuous` itself.
+- **A target, default or alias reports the line of its key** (the YAML loader now records
+  `key_lines` too): still option A, an entry's own line. A command written as plain text instead
+  of a mapping still reports its section's line (a limitation: lists don't record item lines).
+- **`listen commands check` on a missing folder exits 1** (`<folder>: no such folder`); the agent
+  itself still starts with an empty library.
 
 ## Learning
 JSON Schema; validating data at the edge; "skip the bad, keep the good"; mtime-based reloading; a

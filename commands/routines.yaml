@@ -1,0 +1,10 @@
+# routines: one sentence, several steps in order; a failed step doesn't stop the others (spec §3.8)
+version: 1
+
+commands:
+  - id: dsa
+    patterns: ["start dsa", "dsa time", "let's do dsa"]
+    steps:     # placeholders until the owner names the real ones (S2-01)
+      - {action: launch_app, params: {app: CLion}}
+      - {action: open_url, params: {url: "https://leetcode.com/problemset/"}}
+      - {action: open_url, params: {url: "https://www.geeksforgeeks.org/"}}

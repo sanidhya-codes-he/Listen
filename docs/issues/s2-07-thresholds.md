@@ -20,8 +20,9 @@ rules are subtle (mode, risk, two scores, per-command settings), so they live in
   word count, the command's `risk` and `continuous` setting, `Settings.thresholds`; output =
   `Run`, `Confirm`, `Ignore(reason)`
 - high risk uses the higher pair; continuous mode adds `continuous_extra` to each threshold
-- continuous guardrails: at most 8 words; `continuous: block|confirm|allow` (close_app defaults to
-  confirm; routines allow)
+- continuous guardrails: at most 8 words; `continuous: block|confirm|allow`, read from each
+  `Command` (the defaults come from the command library, S2-01: every high-risk command defaults
+  to confirm, close_app is high risk by default; routines allow unless marked high)
 - settings check added here: base threshold + `continuous_extra` must stay <= 1; high-risk values
   >= normal ones (declined in the stage 1 review, belongs here)
 
