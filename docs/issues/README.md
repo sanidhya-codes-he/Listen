@@ -29,7 +29,7 @@ into the next window.
 | 6 | pr-reviewer | reviews; the owner posts the review on the PR |
 | 7 | assistant -> owner -> pr-reviewer | **fix loop**: fixes are committed to the same branch and pushed (the PR updates itself, CI runs again), then pr-reviewer checks only the fixes. Repeat until its verdict is "Ready" |
 | 8 | owner | merges, only after step 7 says "Ready" |
-| 9 | github-ops + assistant | after every merge: clean up the branch, run `agent/.venv/Scripts/python docs/issues/draw_flowchart.py` (statuses, ready line, chart and critical path follow from GitHub), and add the issue's section to its stage's learning doc (`docs/learning/11-stage-2-voice-agent.tex` for stage 2), in the teach-from-zero format. The stage's last issue only polishes the doc |
+| 9 | github-ops, learning-doc-writer, assistant | after every merge: github-ops coaches the branch clean-up and `agent/.venv/Scripts/python docs/issues/draw_flowchart.py` (statuses, ready line, chart and critical path follow from GitHub); learning-doc-writer writes the issue's section in its stage's learning doc (`docs/learning/11-stage-2-voice-agent.tex` for stage 2) in the teach-from-zero format; the assistant checks it against the evidence and commits it. The stage's last issue only polishes the doc |
 | 10 | issue-refresher + assistant | **major issues only** (see below): refresh the files of the issues that depend on the merged one, and draft follow-ups; the owner decides |
 | 11 | issue-recorder | the issue's **record** in `docs/records/`: a dated, sourced timeline of every step, decision, failure and correction, from the conversations, PRs, reviews, commits and CI |
 
