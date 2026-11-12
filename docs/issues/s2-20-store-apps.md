@@ -57,13 +57,13 @@ Finding a store app's windows for focus and close (its window belongs to another
 found with Notepad): a follow-up if it is needed. Wiring the index into the voice path (S2-16).
 
 ## Done when
-- [ ] "notepad" and "calculator" are found on the owner's laptop, and launched by a manual check
-- [ ] a shortcut app still wins over a store app with the same name (tested)
-- [ ] a garbage `.lnk` is not in `apps` (test fails before the fix, passes after), a good shortcut
+- [x] "notepad" and "calculator" are found on the owner's laptop, and launched by a manual check
+- [x] a shortcut app still wins over a store app with the same name (tested)
+- [x] a garbage `.lnk` is not in `apps` (test fails before the fix, passes after), a good shortcut
       with no target is still indexed, and a damaged one gives one warning and no crash
-- [ ] a failed launch says why: "isn't installed any more" (code 2 or 3, tested on real Windows),
+- [x] a failed launch says why: "isn't installed any more" (code 2 or 3, tested on real Windows),
       "Windows blocked the app" (5, 1260), "cancelled" (1223); Windows shows no error box of its own
-- [ ] the full suite and ruff pass
+- [x] the full suite and ruff pass
 
 ## How to test
 ```

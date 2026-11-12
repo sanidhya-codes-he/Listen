@@ -9,6 +9,10 @@ class ActionError(Exception):
     """An action could not be done. Messages never quote spoken words (app names, URLs)."""
 
 
+class AppNotInstalledError(ActionError):
+    """Windows says the app's file or id is gone: the app index is stale (S2-16 rebuilds it)."""
+
+
 _PRIMITIVES: dict[str, tuple[Callable[..., Any], dict[str, type]]] = {}
 
 
