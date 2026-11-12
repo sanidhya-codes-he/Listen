@@ -50,7 +50,7 @@
 while the lessons are fresh, and the stage's last issue (S2-19) polishes the whole. Each section
 is taught from zero: the problem first, then the idea, an analogy and where it stops being true,
 the real code and real output, the usual mistakes, and a quick check (answers at the end). So far
-it covers nine issues: M1, M2, M3, M4, M5, M6, S2-08, S2-03 and S2-04.
+it covers ten issues: M1, M2, M3, M4, M5, M6, S2-08, S2-03, S2-04 and S2-01.
 \end{abstract}
 
 \tableofcontents
@@ -514,6 +514,310 @@ Listen from running it?
 \end{quickcheck}
 
 % =====================================================================
+\section{S2-01: command files and the recipe schema}
+\subsection{The problem}
+Listen needs a \emph{menu}: the list of sentences you can say and what each one does. The owner
+asked the natural question: are these files hard-coded? The answer is no, and that is the design
+(spec 3.1, Doc 03: ``commands are data, not code''). The files are written by hand, like
+\texttt{settings.yaml}, and opened in PyCharm. \textbf{YAML} is a plain-text format for nested
+lists and \texttt{key: value} pairs. Compare, first the hard-coded way (not what we do):
+\begin{lstlisting}[language=Python]
+if text == "open youtube":
+    open_url("https://youtube.com")
+\end{lstlisting}
+\noindent with the data way (what we do):
+\begin{lstlisting}
+- id: youtube
+  patterns: ["open youtube"]
+  action: open_url
+\end{lstlisting}
+\noindent In the first, a new command means editing Python, running the tests and restarting
+Listen. In the second it is a few lines of YAML, picked up within 2 seconds, and later the AI
+builder and the web form can propose such entries because they are just data.
+\noindent The Python code only knows \emph{how to read and check} commands, never \emph{which}
+commands exist. The price of hand-written files is typos, so S2-01 is mostly about catching a
+typo and saying exactly where it is, without ever crashing Listen.
+
+\subsection{JSON Schema: the rulebook is itself data}
+A \textbf{schema} is a description of what valid data looks like. \textbf{JSON Schema} writes that
+description as data too (in \texttt{shared/recipe.schema.json}, draft 2020-12), and the
+\texttt{jsonschema} library checks any Python data against it. One rulebook means the agent, and
+later the server and the web form, all agree on what a valid command is.
+
+\begin{analogy}
+A paper form with rules printed on it: ``tick exactly one of these two boxes'', ``this field takes
+only the words on this list''. The clerk checks the form against the rules without knowing what
+the form is \emph{for}. \emph{Where it breaks:} the clerk checks the \emph{shape} of a command,
+never whether it works: a well-formed \texttt{open\_url} with a dead address passes. And the
+checker has no idea which line of the file an error came from (see below).
+\end{analogy}
+
+These are the rules we used, each with the typo it catches:
+\begin{center}
+\begin{tabularx}{\textwidth}{l p{0.44\textwidth} X}
+\toprule
+\textbf{Keyword} & \textbf{In our schema} & \textbf{Catches} \\
+\midrule
+\texttt{enum} & \texttt{action} is one of eight names (spec 3.5): the \emph{allowlist} &
+  \texttt{action: run\_program} \\
+\texttt{pattern} & a sentence's \texttt{\{slot\}} must be \texttt{query}, \texttt{target},
+  \texttt{app} or \texttt{number} & \texttt{open \{nmae\}} \\
+\texttt{oneOf} & the entry has \texttt{action} \emph{or} \texttt{steps}, exactly one &
+  both, or neither \\
+\texttt{if} / \texttt{then} & \emph{if} the action is \texttt{press\_keys}, \emph{then}
+  \texttt{when\_app} is required & keys pressed in any window \\
+\texttt{additionalProperties} & \texttt{false}: only the listed keys are allowed &
+  \texttt{acton:} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\noindent The last one matters most: without it, \texttt{acton: open\_url} would be silently
+ignored and the command would simply do nothing.
+
+\subsection{A typo, traced}
+The owner's example entry, with \texttt{action} misspelled on line 4 (the file starts with
+\texttt{commands:} on line 1):
+\begin{lstlisting}
+commands:
+  - id: search
+    patterns: ["search {query}"]
+    acton: open_url
+    params: {url: "x"}
+\end{lstlisting}
+\begin{center}
+\begin{tabularx}{\textwidth}{c X}
+\toprule
+\textbf{Step} & \textbf{What happens} \\
+\midrule
+1 & YAML is parsed: valid YAML, so no error here. \\
+2 & The entry is checked against the \texttt{command} rule. jsonschema reports two things:
+    \texttt{Additional properties are not allowed ('acton' was unexpected)}, and
+    \texttt{\{'id': 'search', 'patterns': [...], ...\} is not valid under any of the given
+    schemas}. \\
+3 & The second message is the \texttt{oneOf} failing (neither \texttt{action} nor
+    \texttt{steps}) and it dumps the whole entry: unreadable. Our \texttt{\_explain} function
+    translates both into plain words. \\
+4 & The entry is skipped, the others still load, and one warning appears. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\noindent The warning, from the real code:
+\begin{lstlisting}
+core.yaml:2: command 'search': unknown key 'acton'; needs either 'action' or 'steps'
+\end{lstlisting}
+\noindent To check \emph{one entry} instead of the whole file, the schema keeps the
+\texttt{command} rule under \texttt{\$defs} and the code points at it:
+\begin{lstlisting}[language=Python]
+Draft202012Validator({"$defs": schema["$defs"], "$ref": "#/$defs/command"})
+\end{lstlisting}
+
+\subsection{Line numbers: LinedDict}
+The warning above says \texttt{core.yaml:2}. Where did the 2 come from? jsonschema sees plain
+Python dicts, and a dict does not remember where in the file it was written. The YAML parser
+\emph{does} know (it keeps a \textbf{mark} for each node, counted from 0, so we add 1 like
+editors do). The owner asked exactly how precise the line would be, so the real output of both
+tools was shown first, and then a choice was offered:
+\begin{center}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{Option} & \textbf{Warning for the \texttt{acton} typo} \\
+\midrule
+A: the entry's line & \texttt{core.yaml:2: command 'search': unknown key 'acton' \ldots{}}
+   (the line of \texttt{- id: search}; you find \texttt{acton} inside) \\
+B: the exact key's line & \texttt{core.yaml:4: \ldots{} (did you mean 'action'?)}, about 15
+   more lines of code \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\noindent \textbf{The owner chose A} (2026-11-08): simpler, and the entry is small enough to read.
+The loader in \texttt{core/yamlfile.py} (M2's file) now builds a \texttt{dict} subclass:
+\begin{lstlisting}[language=Python]
+class LinedDict(dict):
+    line = 0
+    key_lines: dict = {}   # replaced per mapping by the loader
+
+def construct_lined_map(self, node):
+    data = LinedDict()
+    data.line = node.start_mark.line + 1
+    yield data
+    data.update(self.construct_mapping(node))
+\end{lstlisting}
+\noindent Real values for the entry above: \texttt{entry.line == 2} and
+\texttt{entry.key\_lines == \{'id': 2, 'patterns': 3, 'acton': 4, 'params': 5\}}. And because it
+is a \texttt{dict} underneath, it \emph{equals} a plain dict, so all of M2's settings code and
+tests were untouched (135 tests passed, none edited). Why change M2's file here? S2-01 is the first
+caller that needs a line for every entry, not only for duplicates. Rejected: parsing the file
+a second time, because two parses of one file can disagree.
+
+\paragraph{The review fills a gap.} A target, default or alias is a single \texttt{name: value}
+line, and a string has no \texttt{.line}. So a wrong \emph{second} default reported the section's
+first line. The review added \texttt{key\_lines} (about 3 lines in the loader): such an entry now
+warns on its own key's line. Still option A, since the line is the entry's. One limit remains,
+written in the PR: a command written as plain text (\texttt{- just text}) reports the line of its
+\texttt{commands:} heading.
+
+\subsection{Skip the bad, keep the good}
+Two different failures need two different answers:
+\begin{center}
+\begin{tabularx}{\textwidth}{p{0.42\textwidth} X}
+\toprule
+\textbf{What is wrong} & \textbf{What Listen does} \\
+\midrule
+one \emph{entry} (unknown key, bad risk, \ldots) & skip that entry with
+   \texttt{file:line}; every other entry still loads \\
+a whole \emph{file} (broken YAML, duplicate key, top level not a mapping) & keep the file's
+   \emph{last good} data, and warn \texttt{; using the last good version} \\
+a \emph{deleted} file & its commands disappear at the next check \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\noindent The last two rows differ on purpose, and the owner's design explains why: deleting a
+file is deliberate, while a broken file is usually a half-saved one (editors save in two steps),
+and a typo should not make your voice commands vanish mid-sentence.
+
+Real run, a folder with \texttt{a.yaml} (command \texttt{hello}) and \texttt{b.yaml}
+(\texttt{bye}):
+\begin{center}
+\begin{tabularx}{\textwidth}{p{0.3\textwidth} p{0.2\textwidth} X}
+\toprule
+\textbf{Step} & \textbf{Commands loaded} & \textbf{Problems} \\
+\midrule
+start & hello, bye & none \\
+check again, nothing changed & hello, bye & none (no rebuild; returns \texttt{False}) \\
+delete \texttt{a.yaml} & bye & none \\
+save \texttt{b.yaml} as \texttt{commands: [} & bye (last good) & \texttt{b.yaml: not valid YAML
+  \ldots{}; using the last good version} \\
+re-create \texttt{a.yaml} broken the same way & bye only & \texttt{a.yaml: not valid YAML
+  \ldots{}} with no ``last good'': it was forgotten \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Hot reload: a snapshot, and one assignment}
+Every 2 seconds the housekeeping worker (S2-16, not built yet) will call
+\texttt{reload\_if\_changed()}. Reading and parsing every file every 2 seconds would be wasteful, so
+the check first takes a \textbf{snapshot}: for each \texttt{.yaml} file, its name, its
+modification time in nanoseconds and its size, which Windows gives without opening the file.
+\begin{lstlisting}[language=Python]
+snapshot[path.name] = (stat.st_mtime_ns, stat.st_size)
+...
+if snapshot == self._snapshot:
+    return False
+self._snapshot = snapshot
+self.library = self._build()   # one assignment: old or new, whole
+return True
+\end{lstlisting}
+\noindent An edit, an added file or a deleted file all change the snapshot, so all three rebuild.
+The new library is built completely on the side, \emph{then} stored in one assignment.
+
+\begin{analogy}
+A menu board in a caf\'e: the staff keep reading the old board until the new one is fully
+written, then hang it up in one move. Nobody ever reads half of each. \emph{Where it breaks:} the
+caf\'e has one reader at a time; here several threads may read \texttt{.library} while it is
+swapped. It works because replacing one attribute is a single step in Python, so a reader holds
+either the whole old library or the whole new one.
+\end{analogy}
+
+Files load in \textbf{sorted name order}, which makes ``the earlier entry wins'' (a tie, or a
+repeated \texttt{id}) the same on every run and every PC. Otherwise it would depend on the order
+Windows lists the folder. The owner's rename example: \texttt{media.yaml} $\to$
+\texttt{music.yaml} keeps its place (after \texttt{core}, before \texttt{routines}); renaming it
+\texttt{aaa.yaml} would move its commands to the front, and they would start winning ties.
+
+\subsection{\texttt{listen commands check}}
+The same loader, run once by hand. It prints each problem and a summary, and exits 1 if there
+was any problem (not 2, which argparse uses for a wrong command, nor 3 or 78 from M3). On the
+starter files:
+\begin{lstlisting}
+14 commands, 5 targets in 5 files: no problems          (exit 0)
+\end{lstlisting}
+\noindent The owner broke \texttt{core.yaml} by hand to see it fail (\texttt{launch\_app} became
+\texttt{launch\_apps} on line 14), then restored it with git:
+\begin{lstlisting}
+core.yaml:12: command 'open': action: 'launch_apps' is not an allowed action
+13 commands, 5 targets in 5 files: 1 problem             (exit 1)
+\end{lstlisting}
+\noindent Line 12 is where the \texttt{open} entry starts, not the typo's line 14: option A. The
+other 13 commands loaded. If the \texttt{commands/} folder itself is missing (a moved checkout),
+the check prints \texttt{<folder>: no such folder} and exits 1; the first version said ``no
+problems'', which would have been false comfort. Listen itself still starts, with an empty menu.
+
+\subsection{What the two reviews found}
+\paragraph{A linter trap (B023).} The first draft of the loader defined small helper functions
+\emph{inside} the loop over files, and the helpers used the loop's variable \texttt{name}. Ruff
+refused: \texttt{B023 Function definition does not bind loop variable `name`}. A function
+remembers the \emph{variable}, not the value it had when the function was written, so a helper
+called after the loop had moved on would see the last file's name. Rather than silence the rule,
+the loader was split into \texttt{\_build} (the loop) and \texttt{\_merge}, which receives the file
+name as an argument. Because the code changed, the by-hand breakages were run again on the new
+version (five caught).
+
+\begin{caution}
+\textbf{A passing test is not yet a guard.} After the first review, two new tests passed
+immediately on working code, which proves nothing about the line each one protects. Each guard was
+removed on purpose and the test run:
+\begin{center}
+\begin{tabularx}{\textwidth}{p{0.5\textwidth} X}
+\toprule
+\textbf{Guard removed} & \textbf{Result} \\
+\midrule
+\texttt{skipped.update(error.path)} (a file with a bare \texttt{commands:}) &
+  \texttt{TypeError: 'NoneType' object is not iterable} \\
+\texttt{del self.\_last\_good[gone]} (forget a deleted file) &
+  \texttt{assert ['hello'] == []} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+Before these tests existed, removing those two lines failed \emph{no} test. This is M4's lesson
+again: break the code to see the test notice.
+\end{caution}
+
+\paragraph{A test that passed for the wrong reason.} The test ``\texttt{listen commands check}
+passes on the starter files'' was written before any starter file existed, and it passed at once:
+an empty \texttt{commands/} folder has no problems either (\texttt{0 files: no problems}). It was
+tightened to expect \texttt{targets in 5 files: no problems}, seen to fail, and passed only once
+the five files were added (transcript, 2026-11-08). A green test proves something only if it could
+have been red.
+
+\paragraph{Confirmation follows risk (the owner's rule).} The first review noticed that spec 3.6
+makes closing an app high risk, but the code only wrote \texttt{risk: low}. A table of defaults
+per action was added. Then the owner asked for more: any command with \texttt{risk: high} should
+ask for a confirmation, ``this way I can add more commands without changing the code''. The code
+became:
+\begin{lstlisting}[language=Python]
+ACTION_RISK = {"close_app": "high"}     # high risk when the file doesn't say
+
+risk = entry.get("risk", ACTION_RISK.get(action, "low"))
+continuous = entry.get("continuous", "confirm" if risk == "high" else "allow")
+\end{lstlisting}
+\begin{center}
+\begin{tabularx}{\textwidth}{X l l}
+\toprule
+\textbf{In the YAML} & \textbf{risk} & \textbf{continuous mode} \\
+\midrule
+\texttt{action: close\_app}, nothing else & high & asks first \\
+any command with \texttt{risk: high} & high & asks first \\
+a routine (\texttt{steps}), nothing else & low & runs at once \\
+\texttt{close\_app} with \texttt{risk: low} & low & runs at once \\
+\texttt{risk: high} and \texttt{continuous: allow} & high & runs at once (the file wins) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\noindent A new risky command is now one word of YAML. The rule is the same idea as the whole
+issue: move the decision out of code and into data. The second review also found that the spec
+(3.7) and the S2-07 issue still described the old ``only \texttt{close\_app} confirms'' rule, so
+both were changed in the same PR: the spec is the source of truth, and a second place stating a
+safety default drifts.
+
+\begin{quickcheck}{9}
+(a) While Listen runs, you delete \texttt{media.yaml}, and a minute later save a new
+\texttt{media.yaml} containing only \texttt{commands: [}. Are the media commands available after
+each step, and what does the second step report? (b) You add a command with \texttt{risk: high}
+and nothing about \texttt{continuous}. What happens in continuous mode, and which Python file
+changes?
+\end{quickcheck}
+
+% =====================================================================
 \section{Key takeaways so far}
 \begin{center}
 \renewcommand{\arraystretch}{1.2}
@@ -530,6 +834,7 @@ S2-08 & \texttt{pyproject.toml} says what is allowed; \texttt{uv.lock} says what
 M5 & a test that interrupts must make sure the interrupt cannot escape into pytest \\
 S2-03 & test a threshold with values just under it; refuse rather than guess wrong \\
 S2-04 & a menu of allowed actions; apps by name only; errors never quote what was said \\
+S2-01 & commands are data checked at the edge: skip the bad entry, keep the last good file; confirmation follows \texttt{risk}, set in YAML \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -560,6 +865,13 @@ S2-04 & a menu of allowed actions; apps by name only; errors never quote what wa
   \item There is no action that runs a path: \texttt{launch\_app} takes an app \emph{name}, and
         the name must be found in the app index (Start Menu shortcuts only). A path is not a name
         in that list, so it is refused with ``no installed app matches that name''.
+  \item (a) After the delete: no, the media commands are gone (a deliberate delete drops them, and
+        the file's ``last good'' copy is forgotten too). After the broken save: still gone. The
+        file has never parsed since it came back, so there is nothing to fall back on; the check
+        reports \texttt{media.yaml: not valid YAML (\ldots)} without the words ``using the last
+        good version''. (b) The command asks first, because \texttt{risk: high} defaults to
+        \texttt{continuous: confirm}; no Python file changes, only the YAML. (Writing
+        \texttt{continuous: allow} in the YAML would override it.)
 \end{enumerate}
 
 \end{document}

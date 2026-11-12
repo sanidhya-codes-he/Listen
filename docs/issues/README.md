@@ -15,8 +15,9 @@ nothing can start before its dependencies are closed. The whole graph is drawn i
 ## How an issue is built (the pipeline)
 
 One issue at a time. The helpers are local Claude Code agents (`.claude/agents/`, not in the
-repository), each in its own window; they cannot talk to each other, so every step ends with a
-**handoff line** the owner pastes into the next window.
+repository), each in its own window. They could message each other, but by the owner's choice
+they don't, so the owner sees every step: each step ends with a **handoff line** the owner pastes
+into the next window.
 
 | Step | Who | What happens |
 |---|---|---|

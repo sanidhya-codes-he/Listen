@@ -6,7 +6,7 @@
 | Depends on | M2 |
 | Labels | stage-2, agent |
 | Spec | §3.1, §3.2 (slot names), §3.5 (primitive names), §3.7 (continuous default), §3.8 (routines format), Doc 03 |
-| Status | in progress |
+| Status | done (#85) |
 
 ## Goal
 Commands live in YAML files in `commands/`, every entry is checked against one schema, and
