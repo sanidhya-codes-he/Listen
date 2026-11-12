@@ -167,7 +167,8 @@ class CommandFiles:
                 key_lines = getattr(entries, "key_lines", {})
                 pairs = [(key, entry, key_lines.get(key, 0)) for key, entry in entries.items()]
             for key, entry, line in pairs:
-                at = f"{name}:{line or getattr(entries, 'line', 1)}"
+                section_line = getattr(data, "key_lines", {}).get(section, 1)  # "commands:"
+                at = f"{name}:{line or getattr(entries, 'line', 0) or section_line}"
                 errors = "; ".join(_explain(error) for error in check.iter_errors(entry))
                 if errors:
                     problems.append(f"{at}: {label} {key!r}: {errors}")

@@ -162,6 +162,14 @@ def test_a_scalar_entry_reports_its_own_line(tmp_path):
         "core.yaml:5: default 'play': no target named 'nowhere'; skipped",)
 
 
+def test_a_command_that_is_not_a_mapping_reports_its_sections_line(tmp_path):
+    # lists don't record item lines, so the next best place is the "commands:" line itself
+    write(tmp_path, "a.yaml", "version: 1\ntargets:\n  google: {home: 'https://g'}\n"
+                              "commands:\n" + GOOD + "  - just text\n")
+    [problem] = CommandFiles(tmp_path).library.problems
+    assert problem.startswith("a.yaml:4: command '#2': ")
+
+
 def test_an_empty_section_is_reported_and_the_rest_still_loads(tmp_path):
     # "commands:" with nothing after it: a half-typed save
     write(tmp_path, "a.yaml", command_file(GOOD))
