@@ -17,7 +17,8 @@ so its limits are part of the design, not an afterthought.
 
 ## Scope
 (updated 2026-11-07 after S2-04 merged (PR #80): the registry, the `system` object and the privacy
-rule now exist)
+rule now exist; updated 2026-11-12 after S2-01 merged (PR #85): the refused key combinations must
+cover `undo.keys` and routine steps too)
 - each primitive is one file in `actions/primitives/` with `@primitive("name", params={"level": int})`
   (a dict of parameter name -> type; `run()` refuses missing, extra and wrong-typed ones before the
   function is called); the file returns a value and takes `system` first, like `launch_app.py`
@@ -26,6 +27,14 @@ rule now exist)
   `ctrl+alt+del`); cannot type free text; validation errors name the reason, as an `ActionError`
   (S2-04's rule: messages never quote spoken words; a refused combination comes from a command
   file, not speech, so naming it is fine)
+- **one list of refused combinations, applied to every place keys appear** (handed over by S2-01,
+  whose schema only makes `when_app` mandatory): a command's `params.keys`, its `undo.keys`
+  (`terminal.yaml` has one) and `press_keys` steps in routines. S2-01 does not check these, and
+  `listen commands check` still says "no problems" for `keys: "win+r"`. The list is also called
+  from `CommandFiles` (`intent/library.py`) so a refused combination is a skipped entry with a
+  `file:line` warning at load and in `check`, not only a failure at run time (decision 2026-11-12,
+  recommended: it is one call, and the owner sees the mistake when saving the file); add a test
+  with `keys: "win+r"` in `undo.keys` and in a routine step
 - the real calls are new methods on `WindowsSystem` (`actions/windows.py`) and on `FakeSystem`
   (`tests/actions/conftest.py`, which records each call in `.calls`); the primitives never touch
   Windows themselves

@@ -18,7 +18,8 @@ path meets the 1.5 s budget.
 
 ## Scope
 (updated 2026-11-07 after S2-03 and S2-04 merged (PR #79, #80, #81): who builds the real app index
-and system object, and what a rebuild costs)
+and system object, and what a rebuild costs; updated 2026-11-12 after S2-01 merged (PR #85): the
+reload call, `library.problems` pop-ups and aliases that must follow a reload)
 - build the real `AppIndex(start_menu_folders(), aliases=..., threshold=...)` and give it to
   `WindowsSystem(apps)` (`actions/windows.py`); S2-04 injects the index as `system.apps`, and
   nothing builds either one yet. Call `load_primitives()` once at start-up: the registry does not
@@ -27,6 +28,13 @@ and system object, and what a rebuild costs)
   `IntentNotMatched` / `ConfirmationRequested`; continuous-mode unmatched -> `HeardInContinuous`
 - housekeeping worker: every 2 s, microphone change and command-file reload; the app index's `rebuild()` daily and
   on the command "refresh apps" (moved here from S2-03)
+- command-file reload (S2-01, PR #85): the agent holds one `CommandFiles()`; the housekeeping worker
+  calls `reload_if_changed()` and the intent worker reads `.library` (a frozen `CommandLibrary`
+  swapped in one assignment). When it returns True: (1) show each new line of `library.problems`
+  as a pop-up with `file:line` through S2-15's notifier (spec §9.1), once per distinct line, not
+  every 2 s; (2) pass the new `library.aliases` to the app index: `AppIndex` copies its aliases in
+  `__init__` (`self.aliases`), so an edited alias is otherwise ignored until restart (add a small
+  setter or rebuild the index; test it)
 - the app index gets its aliases from the command library (S2-01) and its match threshold (0.8, a
   constant `MATCH_THRESHOLD` in `intent/app_index.py`) from `settings.yaml` (spec §3.4 says it is
   tunable; review of PR #79)
