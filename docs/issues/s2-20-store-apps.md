@@ -6,7 +6,7 @@
 | Depends on | S2-03 |
 | Labels | stage-2, agent |
 | Spec | §3.4 |
-| Status | todo |
+| Status | in progress |
 
 ## Goal
 "Open Notepad" and "open Calculator" work: Windows 11's built-in store apps are in the app index,
@@ -61,6 +61,8 @@ found with Notepad): a follow-up if it is needed. Wiring the index into the voic
 - [ ] a shortcut app still wins over a store app with the same name (tested)
 - [ ] a garbage `.lnk` is not in `apps` (test fails before the fix, passes after), a good shortcut
       with no target is still indexed, and a damaged one gives one warning and no crash
+- [ ] a failed launch says why: "isn't installed any more" (code 2 or 3, tested on real Windows),
+      "Windows blocked the app" (5, 1260), "cancelled" (1223); Windows shows no error box of its own
 - [ ] the full suite and ruff pass
 
 ## How to test
@@ -80,6 +82,31 @@ uv run pytest tests/intent -v
   the id's `shell:AppsFolder\<id>` string for store apps. Not `shortcut = Path("shell:...")`: a
   `Path` that is not a file path is a trap for the next reader. `WindowsSystem.launch` and
   `FakeSystem.launch` take a string or path then.
+
+## Decisions (made 2026-11-12, step 3 with the owner)
+- **Only store apps come from `shell:AppsFolder`**: items whose AppUserModelID contains `!`
+  (`Package_publisher!App`, 53 of 179). The other 126 (programs with their own id, `{known
+  folder}\program.exe`, plain paths) already reach the index through their Start Menu shortcuts.
+  A shortcut app with the same name wins.
+- **The path to open follows the kind of app**: a store app has `app_id` and no shortcut
+  (`shortcut=None`) and opens with `shell:AppsFolder\<app_id>`; every other app opens its shortcut,
+  as before.
+- **A damaged shortcut** (empty, or not starting with `4C 00 00 00`) is left out of the index with
+  a warning naming the file.
+- **The slower rebuild (1.3-3.5 s) is accepted**, no caching: it runs on the housekeeping worker.
+- **An uninstalled app** stays in the index until the next rebuild (the index is a snapshot).
+  To close that gap, a failed launch says why, from Windows' own error code (`GetLastError` after
+  `ShellExecuteExW`), and only "gone" triggers a rebuild:
+  - 2 or 3 (file or path not found, measured: an uninstalled shortcut app and an uninstalled store
+    app both give 2): `AppNotInstalledError`, "the app isn't installed any more"; S2-16 rebuilds
+    the index once
+  - 5 or 1260 (access denied, blocked by policy): "Windows blocked the app"; no rebuild
+  - 1223 (the admin prompt was answered "No"): "starting the app was cancelled"; no rebuild
+  - anything else: "the app could not be started", as before
+  Rejected: retrying after a rebuild and removing the app if it fails again (an installed app
+  would then be reported as "no installed app matches" until the next rebuild), and keeping it
+  and rebuilding on every failure (a rebuild that cannot help).
+- **`SEE_MASK_FLAG_NO_UI`** on the launch: Listen speaks the error, Windows shows no box.
 
 ## Learning
 AppUserModelIDs and how Windows starts store apps; reading a shell folder.
