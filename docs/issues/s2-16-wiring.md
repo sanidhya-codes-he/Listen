@@ -28,6 +28,9 @@ reload call, `library.problems` pop-ups and aliases that must follow a reload)
   `IntentNotMatched` / `ConfirmationRequested`; continuous-mode unmatched -> `HeardInContinuous`
 - housekeeping worker: every 2 s, microphone change and command-file reload; the app index's `rebuild()` daily and
   on the command "refresh apps" (moved here from S2-03)
+- when `launch_app` raises `AppNotInstalledError` (S2-20: Windows says the file or app id is gone),
+  rebuild the app index once, so the uninstalled app drops out; any other launch error gives no
+  rebuild (decided 2026-11-12 in S2-20's step 3)
 - command-file reload (S2-01, PR #85): the agent holds one `CommandFiles()`; the housekeeping worker
   calls `reload_if_changed()` and the intent worker reads `.library` (a frozen `CommandLibrary`
   swapped in one assignment). When it returns True: (1) show each new line of `library.problems`

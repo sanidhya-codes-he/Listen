@@ -3,6 +3,8 @@ import pytest
 
 from listen_agent.actions.registry import ActionError, load_primitives, run
 
+NOTEPAD_ID = "Microsoft.WindowsNotepad_8wekyb3d8bbwe!App"
+
 
 @pytest.fixture(autouse=True)
 def primitives():
@@ -42,6 +44,13 @@ def test_launch_app_starts_the_shortcut_and_returns_the_process_id(system, name,
     system.pid = pid  # the real system has no process id for store apps
     assert run("launch_app", system, app=name) == pid
     assert system.calls == [("launch", system.apps.find(name)[0].shortcut)]
+
+
+def test_launch_app_starts_a_store_app_by_its_id(system):
+    # a store app found only in shell:AppsFolder has no shortcut to double-click
+    system.pid = None
+    assert run("launch_app", system, app="notepad") is None
+    assert system.calls == [("launch", rf"shell:AppsFolder\{NOTEPAD_ID}")]
 
 
 @pytest.mark.parametrize("action", ["launch_app", "focus_app", "close_app"])
