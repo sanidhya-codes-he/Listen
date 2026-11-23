@@ -57,7 +57,7 @@ Finding a store app's windows for focus and close (its window belongs to another
 found with Notepad): a follow-up if it is needed. Wiring the index into the voice path (S2-16).
 
 ## Done when
-- [ ] "notepad" and "calculator" are found on the owner's laptop, and launched by a manual check
+- [x] "notepad" and "calculator" are found on the owner's laptop, and launched by a manual check
 - [x] a store app wins over a shortcut app with the same name, and Windows' own store app over
       another with its name (tested; changed in the review of PR #86)
 - [x] `rebuild()` works on a worker thread after the main thread loaded pywin32 (tested)
