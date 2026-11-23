@@ -8,8 +8,9 @@ import pytest
 @dataclass(frozen=True)
 class FakeApp:
     name: str
-    shortcut: Path
+    shortcut: Path | None
     target: Path | None
+    app_id: str | None = None
 
 
 class FakeApps:
@@ -52,11 +53,12 @@ class FakeSystem:
 CODE = FakeApp(
     "Visual Studio Code", Path("C:/fake/Visual Studio Code.lnk"), Path("C:/fake/Code.exe"))
 CALC = FakeApp("Calculator", Path("C:/fake/Calculator.lnk"), None)  # a store app: no target
+NOTEPAD = FakeApp("Notepad", None, None, "Microsoft.WindowsNotepad_8wekyb3d8bbwe!App")
 
 
 @pytest.fixture
 def system():
-    return FakeSystem(FakeApps(CODE, CALC))
+    return FakeSystem(FakeApps(CODE, CALC, NOTEPAD))
 
 
 @pytest.fixture

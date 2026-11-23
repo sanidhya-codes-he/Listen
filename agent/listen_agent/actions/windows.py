@@ -5,7 +5,7 @@ from ctypes import wintypes
 from pathlib import Path
 from typing import Any
 
-from listen_agent.actions.registry import ActionError
+from listen_agent.actions.registry import ActionError, AppNotInstalledError
 
 _user32 = ctypes.WinDLL("user32", use_last_error=True)
 _kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
@@ -37,7 +37,7 @@ _ole32.CoInitializeEx.restype = ctypes.c_long  # an HRESULT: below 0 means it fa
 
 _GW_OWNER, _WM_CLOSE, _SW_RESTORE = 4, 0x0010, 9
 _PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
-_SEE_MASK_NOCLOSEPROCESS, _SW_SHOWNORMAL = 0x40, 1
+_SEE_MASK_NOCLOSEPROCESS, _SEE_MASK_FLAG_NO_UI, _SW_SHOWNORMAL = 0x40, 0x400, 1
 _COINIT_APARTMENTTHREADED, _COINIT_DISABLE_OLE1DDE = 0x2, 0x4
 # the desktop and the taskbar belong to explorer.exe too; closing "File Explorer" must spare them
 _SHELL_CLASSES = {"Progman", "WorkerW", "Shell_TrayWnd", "Shell_SecondaryTrayWnd"}
@@ -56,6 +56,17 @@ class _ShellExecuteInfo(ctypes.Structure):  # SHELLEXECUTEINFOW
 
 _shell32.ShellExecuteExW.argtypes = [ctypes.POINTER(_ShellExecuteInfo)]
 _shell32.ShellExecuteExW.restype = wintypes.BOOL
+
+
+def launch_error(code: int) -> ActionError:
+    """Why ShellExecuteExW failed, from Windows' error code; never the path (it names the app)."""
+    if code in (2, 3):  # file / path not found: uninstalled since the last rebuild
+        return AppNotInstalledError("the app isn't installed any more")
+    if code in (5, 1260):  # access denied / blocked by a policy
+        return ActionError("Windows blocked the app")
+    if code == 1223:  # the admin prompt was answered "No"
+        return ActionError("starting the app was cancelled")
+    return ActionError("the app could not be started")
 
 
 def _program_of(pid: int) -> str:
@@ -86,21 +97,23 @@ class WindowsSystem:
     def open_url(self, url: str) -> None:
         os.startfile(url)  # the default browser
 
-    def launch(self, shortcut: Path) -> int | None:
+    def launch(self, shortcut: Path | str) -> int | None:
         # like a double-click: Windows applies the shortcut's arguments, "Start in" folder and file
-        # type, and gives a console program its own window
+        # type, and gives a console program its own window. A str is a store app's
+        # shell:AppsFolder\<AppUserModelID>. NO_UI: Listen says why it failed, Windows shows no box
         info = _ShellExecuteInfo(cbSize=ctypes.sizeof(_ShellExecuteInfo),
-                                 fMask=_SEE_MASK_NOCLOSEPROCESS, lpFile=str(shortcut),
-                                 nShow=_SW_SHOWNORMAL)
+                                 fMask=_SEE_MASK_NOCLOSEPROCESS | _SEE_MASK_FLAG_NO_UI,
+                                 lpFile=str(shortcut), nShow=_SW_SHOWNORMAL)
         # Microsoft: initialise COM first, shortcuts may be handled by COM shell extensions
         com = _ole32.CoInitializeEx(None, _COINIT_APARTMENTTHREADED | _COINIT_DISABLE_OLE1DDE)
         try:
             started = _shell32.ShellExecuteExW(ctypes.byref(info))
+            code = ctypes.get_last_error()  # read at once: the next Windows call may overwrite it
         finally:
             if com >= 0:
                 _ole32.CoUninitialize()
         if not started:
-            raise ActionError("the app could not be started")  # never the path: it names the app
+            raise launch_error(code)
         if not info.hProcess:
             return None  # store apps, or apps handed to a copy already running: no process of ours
         try:
