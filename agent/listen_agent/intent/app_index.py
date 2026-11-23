@@ -9,6 +9,8 @@ from pathlib import Path
 MATCH_THRESHOLD = 0.8  # spec §3.4; becomes a setting when the matcher is wired in (S2-16)
 LNK_HEADER_SIZE, LNK_MAGIC = 76, b"L\0\0\0"  # every shell-link file starts 4C 00 00 00, 76 bytes
 
+WINDOWS_OWN = "Microsoft.Windows"  # ids of apps that ship with Windows: Photos, Notepad, Calculator
+
 log = logging.getLogger("intent")
 
 
@@ -34,12 +36,14 @@ def read_targets(shortcuts: Iterable[Path]) -> dict[Path, str]:
     return {path: shell.CreateShortcut(str(path)).TargetPath for path in shortcuts}
 
 
-def read_store_apps() -> dict[str, str]:
-    """Name -> AppUserModelID of every item in the shell's Applications folder (1.3-3.5 s)."""
+def read_store_apps() -> list[tuple[str, str]]:
+    """(name, AppUserModelID) of every item in the shell's Applications folder (1.3-3.5 s).
+
+    A list, not a dict: two items can share a name ("Photos": Windows' and OneDrive's)."""
     import win32com.client  # Windows only, as above
 
     folder = win32com.client.Dispatch("Shell.Application").NameSpace("shell:AppsFolder")
-    return {item.Name: item.Path for item in folder.Items()}
+    return [(item.Name, item.Path) for item in folder.Items()]
 
 
 def _is_shortcut_file(path: Path) -> bool:
@@ -59,7 +63,7 @@ class AppIndex:
         read_targets: Callable[[list[Path]], dict[Path, str]] = read_targets,
         aliases: dict[str, str] | None = None,
         threshold: float = MATCH_THRESHOLD,
-        read_store_apps: Callable[[], dict[str, str]] = read_store_apps,
+        read_store_apps: Callable[[], list[tuple[str, str]]] = read_store_apps,
     ) -> None:
         self.folders = list(folders)
         self.read_targets = read_targets
@@ -78,19 +82,29 @@ class AppIndex:
                 shortcuts.append(path)
             else:
                 log.warning("damaged shortcut skipped: %s", path.name)  # a file name, not speech
-        targets = self.read_targets(shortcuts)
+        import pythoncom  # Windows only
+
+        # S2-16 calls this on a worker thread, where COM is not set up (review of PR #86)
+        pythoncom.CoInitialize()
+        try:
+            targets = self.read_targets(shortcuts)
+            store = self.read_store_apps()
+        finally:
+            pythoncom.CoUninitialize()
         apps: dict[str, App] = {}
+        # store apps first, so Windows' own version wins a name over a shortcut (the owner's
+        # rule); among them Windows' own ids, then the order Windows lists them in
+        for name, app_id in sorted(store, key=lambda item: not item[1].startswith(WINDOWS_OWN)):
+            # only store apps ("Package_publisher!App"): every other item has a Start Menu shortcut
+            if "!" in app_id:
+                apps.setdefault(name.lower(), App(name, None, None, app_id))
         for path in shortcuts:
             key, target = path.stem.lower(), targets.get(path, "")
             if "uninstall" in key or key in apps:
-                continue  # uninstallers are not apps; the first shortcut with a name wins
+                continue  # uninstallers are not apps; a store app or the first shortcut wins
             if target and not Path(target).exists():
                 continue  # a broken link: the program it points at is gone
             apps[key] = App(path.stem, path, Path(target) if target else None)
-        for name, app_id in self.read_store_apps().items():
-            # only store apps ("Package_publisher!App"): every other item has a Start Menu shortcut
-            if "!" in app_id and name.lower() not in apps:
-                apps[name.lower()] = App(name, None, None, app_id)
         self.apps = apps
 
     def names(self) -> list[str]:

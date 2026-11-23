@@ -127,7 +127,9 @@ URL values are URL-encoded. Matching must run in under 5 ms.
 
 ### 3.4 App index
 
-Built at start-up from Start Menu shortcut folders (display name -> launch target), refreshed
+Built at start-up from Start Menu shortcut folders (display name -> launch target) and the
+store apps in `shell:AppsFolder` (display name -> AppUserModelID; Windows' own version wins a
+name over a shortcut), refreshed
 daily and on "refresh apps". Aliases in the command files. `{app}` uses `difflib` similarity with
 threshold **0.8** (tunable).
 

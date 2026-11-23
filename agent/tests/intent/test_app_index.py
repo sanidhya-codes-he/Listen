@@ -1,4 +1,6 @@
 # tests for the app index: Start Menu shortcuts -> apps, and spoken names -> apps
+import subprocess
+import sys
 from functools import partial
 from pathlib import Path
 
@@ -7,7 +9,7 @@ import pytest
 from listen_agent.intent import app_index
 
 # no store apps unless a test gives some: the real reader would list this laptop's
-AppIndex = partial(app_index.AppIndex, read_store_apps=lambda: {})
+AppIndex = partial(app_index.AppIndex, read_store_apps=lambda: [])
 LNK_HEADER = b"L\x00\x00\x00" + bytes(72)  # a shortcut file's first 76 bytes start with 4C 00 00 00
 
 NOTEPAD_ID = "Microsoft.WindowsNotepad_8wekyb3d8bbwe!App"
@@ -155,20 +157,39 @@ def test_default_folders_are_the_two_start_menus(monkeypatch, tmp_path):
 
 def test_store_apps_are_indexed_with_their_id(start_menu):
     folders, reader = start_menu
-    store = {"Notepad": NOTEPAD_ID, "Some Tool": r"{6D809377-6AF0-444B-8957-A3773F02200E}\tool.exe"}
+    store = [("Notepad", NOTEPAD_ID),
+             ("Some Tool", r"{6D809377-6AF0-444B-8957-A3773F02200E}\tool.exe")]
     index = AppIndex(folders, read_targets=reader, read_store_apps=lambda: store)
     app, _ = index.find("notepad")
     assert (app.name, app.app_id, app.shortcut, app.target) == ("Notepad", NOTEPAD_ID, None, None)
     assert "Some Tool" not in index.names()  # not a store app: it arrives through its shortcut
 
 
-def test_a_shortcut_app_wins_over_a_store_app_with_the_same_name(start_menu):
+def test_a_store_app_wins_over_a_shortcut_app_with_the_same_name(start_menu):
+    # the owner's rule (review of PR #86): Windows' own version before a Start Menu shortcut
     folders, reader = start_menu
-    store = {"Calculator": "Microsoft.WindowsCalculator_8wekyb3d8bbwe!App"}
+    store = [("Calculator", "Microsoft.WindowsCalculator_8wekyb3d8bbwe!App")]
     index = AppIndex(folders, read_targets=reader, read_store_apps=lambda: store)
     app, _ = index.find("calculator")
-    assert app.app_id is None
-    assert app.shortcut.name == "Calculator.lnk"
+    assert (app.app_id, app.shortcut) == ("Microsoft.WindowsCalculator_8wekyb3d8bbwe!App", None)
+
+
+@pytest.mark.parametrize(("store", "expected"), [
+    # the owner's laptop lists Windows Photos first, OneDrive Photos second; either order works
+    ([("Photos", "Microsoft.OneDrive.Photos_8wekyb3d8bbwe!OneDrive.App"),
+      ("Photos", "Microsoft.Windows.Photos_8wekyb3d8bbwe!App")],
+     "Microsoft.Windows.Photos_8wekyb3d8bbwe!App"),
+    # a non-store item with the name never blocks the store app
+    ([("Get Help", "https://www.java.com/en/download/help/"),
+      ("Get Help", "Microsoft.GetHelp_8wekyb3d8bbwe!App")],
+     "Microsoft.GetHelp_8wekyb3d8bbwe!App"),
+    # two store apps, neither Windows' own: the first listed wins
+    ([("Tool", "Vendor.ToolA_abc!App"), ("Tool", "Vendor.ToolB_abc!App")], "Vendor.ToolA_abc!App"),
+], ids=["windows-own-wins", "non-store-skipped", "first-wins"])
+def test_two_store_items_with_one_name(start_menu, store, expected):
+    folders, reader = start_menu
+    index = AppIndex(folders, read_targets=reader, read_store_apps=lambda: store)
+    assert index.find(store[0][0])[0].app_id == expected
 
 
 @pytest.mark.parametrize("data", [b"", b"not a shortcut at all", LNK_HEADER[:40]],
@@ -176,7 +197,9 @@ def test_a_shortcut_app_wins_over_a_store_app_with_the_same_name(start_menu):
 def test_damaged_shortcuts_are_left_out_with_a_warning(start_menu, caplog, data):
     folders, reader = start_menu
     shortcut(folders[0], "Broken.lnk", data)
-    index = AppIndex(folders, read_targets=reader)  # the fake reader raises on unknown files
+    # like the real reader, the fake gives "" for a file it can't read instead of raising
+    index = AppIndex(folders, read_targets=lambda paths: reader(
+        [p for p in paths if p.name != "Broken.lnk"]))
     assert "Broken" not in index.names()
     assert "Visual Studio Code" in index.names()  # the good ones still load
     assert [r.getMessage() for r in caplog.records] == ["damaged shortcut skipped: Broken.lnk"]
@@ -186,4 +209,26 @@ def test_the_real_store_reader_lists_apps_by_name():
     # CI runs on Windows too; a fresh runner has fewer store apps than a laptop, so no "!" check
     store = app_index.read_store_apps()
     assert store
-    assert all(isinstance(name, str) and isinstance(app_id, str) for name, app_id in store.items())
+    assert all(isinstance(name, str) and isinstance(app_id, str) for name, app_id in store)
+
+
+def test_rebuild_works_on_a_worker_thread():
+    # S2-16 rebuilds on its housekeeping thread, after the main thread has loaded pywin32: COM is
+    # then not set up on the worker. A fresh process, so earlier tests can't set it up by accident
+    probe = (
+        "import threading, win32com.client\n"
+        "from listen_agent.intent.app_index import AppIndex, start_menu_folders\n"
+        "errors = []\n"
+        "def build():\n"
+        "    try:\n"
+        "        AppIndex(start_menu_folders())\n"
+        "    except Exception as error:\n"
+        "        errors.append(error)\n"
+        "worker = threading.Thread(target=build)\n"
+        "worker.start()\n"
+        "worker.join()\n"
+        "print(errors)\n"
+    )
+    result = subprocess.run([sys.executable, "-c", probe], capture_output=True, text=True,
+                            timeout=60)
+    assert result.stdout.strip() == "[]", result.stdout + result.stderr

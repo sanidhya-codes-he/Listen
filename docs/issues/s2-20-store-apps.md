@@ -57,8 +57,10 @@ Finding a store app's windows for focus and close (its window belongs to another
 found with Notepad): a follow-up if it is needed. Wiring the index into the voice path (S2-16).
 
 ## Done when
-- [x] "notepad" and "calculator" are found on the owner's laptop, and launched by a manual check
-- [x] a shortcut app still wins over a store app with the same name (tested)
+- [ ] "notepad" and "calculator" are found on the owner's laptop, and launched by a manual check
+- [x] a store app wins over a shortcut app with the same name, and Windows' own store app over
+      another with its name (tested; changed in the review of PR #86)
+- [x] `rebuild()` works on a worker thread after the main thread loaded pywin32 (tested)
 - [x] a garbage `.lnk` is not in `apps` (test fails before the fix, passes after), a good shortcut
       with no target is still indexed, and a damaged one gives one warning and no crash
 - [x] a failed launch says why: "isn't installed any more" (code 2 or 3, tested on real Windows),
@@ -87,7 +89,7 @@ uv run pytest tests/intent -v
 - **Only store apps come from `shell:AppsFolder`**: items whose AppUserModelID contains `!`
   (`Package_publisher!App`, 53 of 179). The other 126 (programs with their own id, `{known
   folder}\program.exe`, plain paths) already reach the index through their Start Menu shortcuts.
-  A shortcut app with the same name wins.
+  A shortcut app with the same name wins (changed in the review of PR #86, below).
 - **The path to open follows the kind of app**: a store app has `app_id` and no shortcut
   (`shortcut=None`) and opens with `shell:AppsFolder\<app_id>`; every other app opens its shortcut,
   as before.
@@ -107,6 +109,19 @@ uv run pytest tests/intent -v
   would then be reported as "no installed app matches" until the next rebuild), and keeping it
   and rebuilding on every failure (a rebuild that cannot help).
 - **`SEE_MASK_FLAG_NO_UI`** on the launch: Listen speaks the error, Windows shows no box.
+
+## Decisions (made 2026-11-24, review of PR #86)
+- **Windows' own version wins a name** (the owner's rule): a store app beats a Start Menu shortcut
+  with the same name, and among store apps with one name an id starting `Microsoft.Windows` wins,
+  then the first Windows lists. Found by the review: "Photos" is listed twice on the owner's laptop
+  (`Microsoft.Windows.Photos_...!App`, `Microsoft.OneDrive.Photos_...!OneDrive.App`), and the old
+  dict reader kept the last, so "open Photos" opened OneDrive Photos. `read_store_apps()` now
+  returns (name, id) pairs. No shortcut name equals a store app name on the owner's laptop today,
+  so store-over-shortcut changes nothing there yet.
+- **COM is set up in `rebuild()`** (`pythoncom.CoInitialize()` / `CoUninitialize()` around both
+  readers): from a worker thread, after the main thread has imported pywin32, both readers raised
+  "CoInitialize has not been called" (found by the review; the step 3 check had imported pywin32
+  on the worker itself, so it passed by luck). Also fixes S2-03's `read_targets` for S2-16.
 
 ## Learning
 AppUserModelIDs and how Windows starts store apps; reading a shell folder.
